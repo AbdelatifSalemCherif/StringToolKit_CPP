@@ -2,64 +2,71 @@
 
 #include<iostream>
 
-
 using namespace std;
 
 class StringKernel
 {
 protected:
 
-	char* Begin;
-	char* LogicalEnd;
-	char* PhysicalEnd;
+	char* _Begin;
+	char* _LogicalEnd;
+	char* _PhysicalEnd;
 
-	unsigned short CalculateSize(const char* const& FirstAddress, const char* const& LastAddress)
+	unsigned short _Size(const char* const& FirstAddress, const char* const& LastAddress)
 	{
 		return LastAddress - FirstAddress;
 	}
 
-	unsigned short CalculateLength(const char* const& FirstAddress, const char* const& LastAddress)
+	unsigned short _Length(const char* const& FirstAddress, const char* const& LastAddress)
 	{
 		return LastAddress - FirstAddress + 1;
 	}
 
-	const char* GetLogicalEnd(const char* FirstAddress)
+	const char* _GetLogicalEnd(const char Data[])
 	{
-		while (*FirstAddress)
+		while (*Data)
 		{
-			FirstAddress++;
+			Data++;
 		}
 
-		return FirstAddress;
+		return Data;
 	}
 
-	const char* GetLogicalEnd(const char* )
+	const char* _GetLogicalEnd(const char Data[], const unsigned short& Length)
+	{
+		return Data + Length - 1;
+	}
 
-	bool IsSameData(StringKernel* Data1, StringKernel* Data2)
+	bool _IsSameData(StringKernel* Data1, StringKernel* Data2)
 	{
 		bool IsSame = Data1->Length() == Data2->Length();
 
-		while (IsSame && (Data1->Begin < Data1->LogicalEnd))
+		while (IsSame && (Data1->_Begin < Data1->_LogicalEnd))
 		{
-			IsSame = Data1->Begin++ == Data2->Begin++;
+			IsSame = Data1->_Begin++ == Data2->_Begin++;
 		}
 
 		return IsSame;
 	}
 
-	bool IsSameData(StringKernel* Data2)
+	bool _IsSameData(StringKernel* Data2)
 	{
-		return IsSameData(this, Data2);
+		return _IsSameData(this, Data2);
 	}
 
-	enum enStartFrom { Left, Right };
-
-	char* Write(char* StartWritingAddress, const char* StartReadingAddress, const char* StopReadingAddress
-		, enStartFrom StartWritingFrom = Left)
+	void _AddStopCharacter()
 	{
-		char* StopWritingAddress = StartWritingAddress + CalculateLength(StartReadingAddress, StopReadingAddress) - 1;
+		*_LogicalEnd = '\0';
+	}
 
-		if (StartWritingFrom == Left)
+	enum _enStartFrom { _Left, _Right };
+
+	char* _Write(char* StartWritingAddress, const char* StartReadingAddress, const char* StopReadingAddress
+		, _enStartFrom StartWritingFrom)
+	{
+		char* StopWritingAddress = StartWritingAddress + _Length(StartReadingAddress, StopReadingAddress) - 1;
+
+		if (StartWritingFrom == _Left)
 		{
 			while (StartReadingAddress <= StopReadingAddress)
 			{
@@ -79,37 +86,37 @@ protected:
 		return StopWritingAddress;
 	}
 
-	bool HaveMoreSpace(const unsigned short& NewLength)
+	bool _HaveMoreSpace(const unsigned short& NewLength)
 	{
 		return NewLength <= Capacity();
 	}
 
-	unsigned short GetNewCapacity(const unsigned short& NewLength)
+	unsigned short _GetNewCapacity(const unsigned short& NewLength)
 	{
 
 		return (NewLength + 15) & ~15;
 	}
 
-	char* GetNewPhysicalEnd(const unsigned short& Capacity)
+	char* _GetNewPhysicalEnd(const unsigned short& Capacity)
 	{
-		return Begin + Capacity - 1;
+		return _Begin + Capacity - 1;
 	}
 
-	void HandlePhysicalSpace(const unsigned short& NewLength, const bool& DoSaveData)
+	void _HandlePhysicalSpace(const unsigned short& NewLength, const bool& DoSaveData)
 	{
 
-		if (!HaveMoreSpace(NewLength))
+		if (!_HaveMoreSpace(NewLength))
 		{
-			char* BeginCopy = Begin;
+			char* BeginCopy = _Begin;
 
-			unsigned short Capacity = GetNewCapacity(NewLength);
+			unsigned short Capacity = _GetNewCapacity(NewLength);
 
-			Begin = new char[Capacity];
-			PhysicalEnd = GetNewPhysicalEnd(Capacity);
+			_Begin = new char[Capacity];
+			_PhysicalEnd = _GetNewPhysicalEnd(Capacity);
 
 			if (DoSaveData)
 			{
-				LogicalEnd = Write(Begin, BeginCopy, LogicalEnd);
+				_LogicalEnd = _Write(_Begin, BeginCopy, _LogicalEnd, _Left);
 			}
 			else
 			{
@@ -124,209 +131,257 @@ protected:
 		}
 	}
 
-public:
-
-	StringKernel(const char Value[])
-	{
-		
-	}
-
-
-
-
-
-
-
-	void AddStopCharacter()
-	{
-		*LogicalEnd = '\0';
-	}
-
-	void Clear()
-	{
-
-		LogicalEnd = Begin;
-
-		AddStopCharacter();
-	}
-
-	bool IsEmpty()
-	{
-		return LogicalEnd == Begin;
-	}
-
-	bool IsFull()
-	{
-		return LogicalEnd == PhysicalEnd;
-	}
-
-	unsigned short Size()
-	{
-		CalculateSize(Begin, LogicalEnd);
-	}
-
-	unsigned short Length()
-	{
-		CalculateLength(Begin, LogicalEnd);
-	}
-
-	unsigned short Capacity()
-	{
-		return PhysicalEnd - Begin + 1;
-	}
-
-	void Assignment(const char Source[], const unsigned short& SourceLength)
-	{
-
-		HandlePhysicalSpace(SourceLength, false);
-
-		LogicalEnd = Write(Begin, Source, );
-	}
-
-	static char* Concatenate(char*& DestinationFirstAddress, char*& DestinationEndAddress,
-		const char* const Source1FirstAddress, const char* const Source1LastAddress, const char* const Source2FirstAddress,
-		const char* const Source2LastAddress)
-	{
-		//213472275300
-
-		HandleArraySpace(DestinationFirstAddress, CalculateLength(Source1FirstAddress, Source1LastAddress)
-			+ CalculateLength(Source2FirstAddress, Source2LastAddress) - 1, DestinationEndAddress, false);
-
-		char* DestinationLastAdress = Write(DestinationFirstAddress, Source1FirstAddress, Source1LastAddress - 1);
-
-		DestinationLastAdress = Write(DestinationLastAdress + 1, Source2FirstAddress, Source2LastAddress);
-
-		return DestinationLastAdress;
-	}
-
-	static char* Concatenate(char*& DestinationFirstAddress, char*& DestinationEndAddress,const char* const Source1FirstAddress
-		, const char* const Source1LastAddress, const char* const Source2FirstAddress)
-	{
-		return Concatenate(DestinationFirstAddress, DestinationEndAddress, Source1FirstAddress, Source1LastAddress,
-			Source2FirstAddress, GetLogicalEnd(Source2FirstAddress));
-	}
-
-	static char* Concatenate(char*& DestinationFirstAddress, char*& DestinationEndAddress,const char* const Source1FirstAddress
-		, const char* const Source2FirstAddress)
-	{
-		return Concatenate(DestinationFirstAddress, DestinationEndAddress, Source1FirstAddress
-			, GetLogicalEnd(Source1FirstAddress), Source2FirstAddress, GetLogicalEnd(Source2FirstAddress));
-	}
-
-	static void Append(char*& DestinationFirstAddress, char*& DestinationLastAddress, char*& DestinationEndAddress,
-		const char* const SourceFirstAddress, const char* const SourceLastAddress)
-	{
-
-		HandleArraySpace(DestinationFirstAddress, DestinationLastAddress, CalculateLength(SourceFirstAddress, SourceLastAddress) - 1
-			, DestinationEndAddress, true);
-
-		DestinationLastAddress = Write(DestinationLastAddress, SourceFirstAddress, SourceLastAddress);
-
-	}
-
-	static void Append(char*& DestinationFirstAddress, char*& DestinationLastAddress, char*& DestinationEndAddress,
-		const char* const SourceFirstAddress)
-	{
-		Append(DestinationFirstAddress, DestinationLastAddress, DestinationEndAddress, SourceFirstAddress
-			, GetLogicalEnd(SourceFirstAddress));
-	}
-
-	static char* Insert(char*& DestinationFirstAddress, char*& DestinationLastAddress, char*& DestinationEndAddress,
-		char*& StartWritingAddress, const char* const SourceFirstAddress, const char* const SourceLastAddress)
-	{
-		unsigned short LengthToStartWritingAddress = CalculateLength(DestinationFirstAddress, StartWritingAddress),
-			SourceLength = CalculateLength(SourceFirstAddress, SourceLastAddress);
-
-		HandleArraySpace(DestinationFirstAddress, DestinationLastAddress, SourceLength - 1, DestinationEndAddress, true);
-
-		StartWritingAddress = DestinationFirstAddress + LengthToStartWritingAddress - 1;
-		char* EndWritingAddress = StartWritingAddress + SourceLength - 2;
-
-		DestinationLastAddress = Write(EndWritingAddress + 1, StartWritingAddress, DestinationLastAddress, Right);
-
-	
-		return Write(StartWritingAddress, SourceFirstAddress, SourceLastAddress - 1);
-	}
-
-	static char* Insert(char*& DestinationFirstAddress, char*& DestinationLastAddress, char*& DestinationEndAddress,
-		char*& StartWritingAddress, const char* const SourceFirstAddress)
-	{
-		return Insert(DestinationFirstAddress, DestinationLastAddress, DestinationEndAddress, StartWritingAddress, SourceFirstAddress
-			, GetLogicalEnd(SourceFirstAddress));
-	}
-
-	static void Delete(char*& LastAddress, char* const StartDeleteAddress, char* const EndDeleteAddress)
-	{
-		Write(StartDeleteAddress, LastAddress, EndDeleteAddress + 1, LastAddress, Left);
-
-	}
-
-	static void Delete(char*& LastAddress, char* const StartDeleteAddress, const unsigned short& Offset)
-	{
-		Delete(LastAddress, StartDeleteAddress, StartDeleteAddress + Offset);
-	}
-
-	static char* Preppend(char*& DestinationFirstAddress, char*& DestinationLastAddress, char*& DestinationEndAddress,
-		const char* const SourceFirstAddress, const char* const SourceLastAddress)
-	{
-		unsigned short LengthSource = CalculateLength(SourceFirstAddress, SourceLastAddress);
-
-		HandleArraySpace(DestinationFirstAddress, DestinationLastAddress, LengthSource - 1, DestinationEndAddress, true);
-
-		char* StartWritingAddress = DestinationFirstAddress;
-		char* EndWritingAddress = DestinationFirstAddress + LengthSource - 2;
-
-		Write(EndWritingAddress + 1, DestinationLastAddress, DestinationFirstAddress, DestinationLastAddress, Right);
-
-		Write(DestinationFirstAddress, EndWritingAddress, SourceFirstAddress, SourceLastAddress - 1);
-
-		return EndWritingAddress;
-	}
-
-	static char* Preppend(char*& DestinationFirstAddress, char*& DestinationLastAddress, char*& DestinationEndAddress,
-		const char* const SourceFirstAddress)
-	{
-		return Preppend(DestinationFirstAddress, DestinationLastAddress, DestinationEndAddress, SourceFirstAddress
-			, GetLogicalEnd(SourceFirstAddress));
-	}
-
-	static char* SwapAddress(const char*& Address1, const char*& Address2)
+	void _Swap2Address(const char*& Address1, const char*& Address2)
 	{
 		const char* TempAddress = Address1;
 		Address1 = Address2;
 		Address2 = TempAddress;
 	}
 
-	static void SwapData(const char*& FirstAddress1, const char*& LastAddress1, const char*& EndAddress1, const char*& FirstAddress2,
-		const char*& LastAddress2, const char*& EndAddress2)
+public:
+
+	StringKernel()
 	{
-		SwapAddress(FirstAddress1, FirstAddress2);
-		SwapAddress(LastAddress1, LastAddress2);
-		SwapAddress(EndAddress1, EndAddress2);
+		_Begin = new char[16];
+
+		_PhysicalEnd = _GetNewPhysicalEnd(16);
+
+		Clear();
+	}
+
+	StringKernel(const char Value[], const unsigned short& ValueLength)
+	{
+		const unsigned short Capacity = _GetNewCapacity(ValueLength);
+
+		_Begin = new char[Capacity];
+
+		_PhysicalEnd = _GetNewPhysicalEnd(Capacity);
+
+		_LogicalEnd = _Write(_Begin, Value, _GetLogicalEnd(Value, ValueLength), _Left);
+	}
+
+	StringKernel(const char Value[])
+	{
+
+		StringKernel(Value, _Length(Value, _GetLogicalEnd(Value)));
 
 	}
 
-	static void PushBack(char*& FirstAddress, char*& LastAddress, char*& EndAddress, const char& Ch_)
+	StringKernel(StringKernel& Value)
 	{
-		HandleArraySpace(FirstAddress, LastAddress, 1, EndAddress, true);
 
-		*LastAddress = Ch_;
+		StringKernel(Value._Begin, Value.Length());
 
-		AddStopCharacter(++LastAddress);
 	}
 
-	static void PopBack(char*& LastAddress)
+	~StringKernel()
 	{
-		AddStopCharacter(--LastAddress);
+		delete[] _Begin;
 	}
 
-	static char* Find(const char* TextFirstAddress, const char* TextLastAddress, const char* WordFirstAddress,
-		const char* WordLastAddress, const enStartFrom& StartReadingFrom = Left)
+	void Clear()
+	{
+
+		_LogicalEnd = _Begin;
+
+		_AddStopCharacter();
+	}
+
+	bool IsEmpty()
+	{
+		return _LogicalEnd == _Begin;
+	}
+
+	bool IsFull()
+	{
+		return _LogicalEnd == _PhysicalEnd;
+	}
+
+	unsigned short Size()
+	{
+		return _Size(_Begin, _LogicalEnd);
+	}
+
+	unsigned short Length()
+	{
+		return _Length(_Begin, _LogicalEnd);
+	}
+
+	unsigned short Capacity()
+	{
+		return _PhysicalEnd - _Begin + 1;
+	}
+
+	void Assignment(const char Source[], const unsigned short& SourceLength)
+	{
+
+		_HandlePhysicalSpace(SourceLength, false);
+
+		_LogicalEnd = _Write(_Begin, Source, _GetLogicalEnd(Source, SourceLength), _Left);
+	}
+
+	void Assignment(const char Source[])
+	{
+		Assignment(Source, _Length(Source, _GetLogicalEnd(Source)));
+	}
+
+	void Copy(StringKernel& Source)
+	{
+		Assignment(Source._Begin, Source.Length());
+	}
+
+	void Concatenate(const char Source1[], const unsigned short & Source1Length, const char Source2[]
+		, const unsigned short& Source2Length)
+	{
+		//213472275300
+
+		_HandlePhysicalSpace(Source1Length + Source2Length - 1, false);
+
+		_LogicalEnd = _Write(_Begin, Source1, _GetLogicalEnd(Source1, Source1Length) - 1, _Left);
+
+		_LogicalEnd = _Write(_LogicalEnd + 1, Source2, _GetLogicalEnd(Source2, Source2Length), _Left);
+
+	}
+
+	void Concatenate(const char Source1[], const char Source2[])
+	{
+		Concatenate(Source1, _Length(Source1, _GetLogicalEnd(Source1)), Source2
+			, _Length(Source2, _GetLogicalEnd(Source2)));
+	}
+
+	void Concatenate(const char Source1[], StringKernel& Source2)
+	{
+		Concatenate(Source1, _Length(Source1, _GetLogicalEnd(Source1)), Source2._Begin, Source2.Length());
+	}
+
+	void Concatenate(StringKernel& Source1, const char Source2[])
+	{
+		Concatenate(Source2, Source1);
+	}
+
+	void Concatenate(StringKernel& Source1, StringKernel& Source2)
+	{
+		Concatenate(Source1._Begin, Source1.Length(), Source2._Begin, Source2.Length());
+	}
+
+	void Append(const char Source[], const unsigned short& SourceLength)
+	{
+
+		_HandlePhysicalSpace(Length() + SourceLength - 1, true);
+
+		_LogicalEnd = _Write(_LogicalEnd, Source, _GetLogicalEnd(Source, SourceLength), _Left);
+
+	}
+
+	void Append(const char Source[])
+	{
+		Append(Source, _Length(Source, _GetLogicalEnd(Source)));
+	}
+
+	void Append(StringKernel& Source)
+	{
+		Append(Source._Begin, Source.Length());
+	}
+
+	void Insert(const unsigned short & StartWrittingIndex, const char Source[], const unsigned short& StartReadingIndex, 
+		const unsigned short& StopReadingIndex)
+	{
+		unsigned short Offset = StopReadingIndex - StartReadingIndex + 1;
+
+		_HandlePhysicalSpace(Length() + Offset, true);
+
+		_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
+
+		_Write(_Begin + StartWrittingIndex, Source + StartReadingIndex, Source + StopReadingIndex, _Left);
+
+	}
+
+	void Insert(const unsigned short& StartWrittingIndex, const char Source[])
+	{		
+		Insert(StartWrittingIndex, Source, 0, _GetLogicalEnd(Source) - Source - 1);
+	}
+
+	void Insert(const unsigned short& StartWrittingIndex, StringKernel& Source, const unsigned short& StartReadingIndex,
+		const unsigned short& StopReadingIndex)
+	{
+		Insert(StartWrittingIndex, Source._Begin, StartReadingIndex, StopReadingIndex);
+	}
+
+	void Insert(const unsigned short& StartWrittingIndex, StringKernel& Source)
+	{
+		Insert(StartWrittingIndex, Source._Begin, 0, Source.Length() - 2);
+	}
+
+	void Delete(const unsigned short& StartDeleteIndex, const unsigned short& EndDeleteIndex)
+	{
+		_LogicalEnd = _Write(_Begin + StartDeleteIndex, _Begin + EndDeleteIndex + 1, _LogicalEnd, _Left);
+
+	}
+
+	void Preppend(const char Source[], const unsigned short& SourceLength)
+	{
+		_HandlePhysicalSpace(Length() + SourceLength - 1, true);
+
+		_LogicalEnd = _Write(_Begin + SourceLength - 1, _Begin, _LogicalEnd, _Right);
+
+		_Write(_Begin, Source, _GetLogicalEnd(Source, SourceLength - 1), _Left);
+
+	}
+
+	void Preppend(const char Source[])
+	{
+		Preppend(Source, _Length(Source, _GetLogicalEnd(Source)));
+	}
+
+	void Preppend(StringKernel& Source)
+	{
+		Preppend(Source._Begin, Source.Length());
+	}
+
+	void Swap(StringKernel& Data2)
+	{
+		_Swap2Address(_Begin, Data2._Begin);
+		_Swap2Address(_LogicalEnd, Data2._LogicalEnd);
+		_Swap2Address(_PhysicalEnd, Data2._PhysicalEnd);
+
+	}
+
+	char at(const unsigned short& Index)
+	{
+		char* AtAddress = _Begin + Index;
+
+		return (AtAddress < _LogicalEnd) ? *(AtAddress) : *(_LogicalEnd - 1);
+	}
+
+	void PushBack(const char& NewCharacter)
+	{
+		_HandlePhysicalSpace(Length() + 1, true);
+
+		*_LogicalEnd++ = NewCharacter;
+
+		_AddStopCharacter();
+	}
+
+	void PopBack()
+	{
+		if (_LogicalEnd > _Begin)
+		{
+			_LogicalEnd--;
+			_AddStopCharacter();
+		}
+		else
+		{
+			Clear();
+		}
+	}
+
+	/*static char* Find(const char* TextFirstAddress, const char* TextLastAddress, const char* WordFirstAddress,
+		const char* WordLastAddress, const _enStartFrom& StartReadingFrom = _Left)
 	{
 		bool IsFound = false;
 		--WordLastAddress;
 
-		if (StartReadingFrom == Left)
+		if (StartReadingFrom == _Left)
 		{
 			while ((TextFirstAddress < TextLastAddress) && !IsFound)
 			{
@@ -342,23 +397,20 @@ public:
 		}
 
 
-	}
+	}*/
 
 
 
-	static void Print(const char* FirstAddress, const char* LastAddress)
+	void Print()
 	{
-		while (FirstAddress < LastAddress)
+		char* BeginCopy = _Begin;
+
+		while (BeginCopy < _LogicalEnd)
 		{
-			cout << *FirstAddress++;
+			cout << *BeginCopy++;
 		}
-		cout << endl;
 	}
 
-	static void Print(const char* FirstAddress)
-	{
-		Print(FirstAddress, GetLogicalEnd(FirstAddress));
-	}
 
 
 

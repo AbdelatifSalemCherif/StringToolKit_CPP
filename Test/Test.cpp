@@ -5,12 +5,14 @@ using namespace std;
 int main()
 {
     
-    const char Value[] = "Abdou";
+    string Value = "Jordan is A Jordan";
+
+    
 
 
-    cout << "Size = " << sizeof(Value) << endl;
+    cout << Value.find("Jo",9, 2);
 
-
+    
 
 
 

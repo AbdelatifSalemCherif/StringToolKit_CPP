@@ -12,17 +12,17 @@ protected:
 	char* _LogicalEnd;
 	char* _PhysicalEnd;
 
-	unsigned short _Size(const char* const& FirstAddress, const char* const& LastAddress)
+	unsigned short _Size(const char* const& FirstAddress, const char* const& LastAddress) const
 	{
 		return LastAddress - FirstAddress;
 	}
 
-	unsigned short _Length(const char* const& FirstAddress, const char* const& LastAddress)
+	unsigned short _Length(const char* const& FirstAddress, const char* const& LastAddress) const
 	{
 		return LastAddress - FirstAddress + 1;
 	}
 
-	const char* _GetLogicalEnd(const char Data[])
+	const char* _GetLogicalEnd(const char Data[]) const
 	{
 		while (*Data)
 		{
@@ -32,26 +32,28 @@ protected:
 		return Data;
 	}
 
-	const char* _GetLogicalEnd(const char Data[], const unsigned short& Length)
+	const char* _GetLogicalEnd(const char Data[], const unsigned short& Length) const
 	{
 		return Data + Length - 1;
 	}
 
-	bool _IsSameData(StringKernel* Data1, StringKernel* Data2)
+	bool _IsSameData(const StringKernel& Data1, const StringKernel& Data2) const
 	{
-		bool IsSame = Data1->Length() == Data2->Length();
+		const char* Begin1 = Data1._Begin, * Begin2 = Data2._Begin;
 
-		while (IsSame && (Data1->_Begin < Data1->_LogicalEnd))
+		bool IsSame = Data1.Length() == Data2.Length();
+
+		while (IsSame && (Data1._Begin < Data1._LogicalEnd))
 		{
-			IsSame = Data1->_Begin++ == Data2->_Begin++;
+			IsSame = Begin1++ == Begin2++;
 		}
 
 		return IsSame;
 	}
 
-	bool _IsSameData(StringKernel* Data2)
+	bool _IsSameData(const StringKernel& Data2) const
 	{
-		return _IsSameData(this, Data2);
+		return _IsSameData(*this, Data2);
 	}
 
 	void _AddStopCharacter()
@@ -62,7 +64,7 @@ protected:
 	enum _enStartFrom { _Left, _Right };
 
 	char* _Write(char* StartWritingAddress, const char* StartReadingAddress, const char* StopReadingAddress
-		, _enStartFrom StartWritingFrom)
+		, _enStartFrom StartWritingFrom) const
 	{
 		char* StopWritingAddress = StartWritingAddress + _Length(StartReadingAddress, StopReadingAddress) - 1;
 
@@ -86,18 +88,18 @@ protected:
 		return StopWritingAddress;
 	}
 
-	bool _HaveMoreSpace(const unsigned short& NewLength)
+	bool _HaveMoreSpace(const unsigned short& NewLength) const
 	{
 		return NewLength <= Capacity();
 	}
 
-	unsigned short _GetNewCapacity(const unsigned short& NewLength)
+	unsigned short _GetNewCapacity(const unsigned short& NewLength) const
 	{
 
 		return (NewLength + 15) & ~15;
 	}
 
-	char* _GetNewPhysicalEnd(const unsigned short& Capacity)
+	char* _GetNewPhysicalEnd(const unsigned short& Capacity) const
 	{
 		return _Begin + Capacity - 1;
 	}
@@ -136,6 +138,39 @@ protected:
 		const char* TempAddress = Address1;
 		Address1 = Address2;
 		Address2 = TempAddress;
+	}
+
+	enum _enThreading {_Necklace, _Beads};
+
+	enum _enSearchFor {_Sheep, _Wolf};
+
+	enum _enCaseSensitivity {_Sensitive, _Insensitive};
+
+	char* _Search(const char* HaystackBegin, const char* HaystackEnd, const char* NeedleBegin, const char* NeedleEnd,
+		_enStartFrom StartSearchFrom = _Left, _enThreading NeedleThreading = _Necklace, _enSearchFor SearchFor = _Sheep
+		, _enCaseSensitivity CaseSensitivity = _Sensitive) const
+	{
+		bool IsFound = false;
+
+		const char* HaystackReader = HaystackBegin, * NeedleReader = NeedleBegin;
+
+		while (!IsFound && HaystackReader < HaystackEnd)
+		{
+			if (*HaystackReader++ == *NeedleReader++)
+			{
+				if (NeedleReader == NeedleEnd + 1)
+				{
+					return (char*) HaystackReader - _Length(NeedleBegin, NeedleEnd);
+				}
+			}
+			else
+			{
+				NeedleReader = NeedleBegin;
+			}
+
+		}
+
+		return nullptr;
 	}
 
 public:
@@ -187,27 +222,27 @@ public:
 		_AddStopCharacter();
 	}
 
-	bool IsEmpty()
+	bool IsEmpty() const
 	{
 		return _LogicalEnd == _Begin;
 	}
 
-	bool IsFull()
+	bool IsFull() const
 	{
 		return _LogicalEnd == _PhysicalEnd;
 	}
 
-	unsigned short Size()
+	unsigned short Size() const
 	{
 		return _Size(_Begin, _LogicalEnd);
 	}
 
-	unsigned short Length()
+	unsigned short Length() const
 	{
 		return _Length(_Begin, _LogicalEnd);
 	}
 
-	unsigned short Capacity()
+	unsigned short Capacity() const
 	{
 		return _PhysicalEnd - _Begin + 1;
 	}
@@ -225,7 +260,7 @@ public:
 		Assignment(Source, _Length(Source, _GetLogicalEnd(Source)));
 	}
 
-	void Copy(StringKernel& Source)
+	void Copy(const StringKernel& Source)
 	{
 		Assignment(Source._Begin, Source.Length());
 	}
@@ -249,17 +284,17 @@ public:
 			, _Length(Source2, _GetLogicalEnd(Source2)));
 	}
 
-	void Concatenate(const char Source1[], StringKernel& Source2)
+	void Concatenate(const char Source1[], const StringKernel& Source2)
 	{
 		Concatenate(Source1, _Length(Source1, _GetLogicalEnd(Source1)), Source2._Begin, Source2.Length());
 	}
 
-	void Concatenate(StringKernel& Source1, const char Source2[])
+	void Concatenate(const StringKernel& Source1, const char Source2[])
 	{
 		Concatenate(Source2, Source1);
 	}
 
-	void Concatenate(StringKernel& Source1, StringKernel& Source2)
+	void Concatenate(const StringKernel& Source1, const StringKernel& Source2)
 	{
 		Concatenate(Source1._Begin, Source1.Length(), Source2._Begin, Source2.Length());
 	}
@@ -278,7 +313,7 @@ public:
 		Append(Source, _Length(Source, _GetLogicalEnd(Source)));
 	}
 
-	void Append(StringKernel& Source)
+	void Append(const StringKernel& Source)
 	{
 		Append(Source._Begin, Source.Length());
 	}
@@ -301,13 +336,13 @@ public:
 		Insert(StartWrittingIndex, Source, 0, _GetLogicalEnd(Source) - Source - 1);
 	}
 
-	void Insert(const unsigned short& StartWrittingIndex, StringKernel& Source, const unsigned short& StartReadingIndex,
+	void Insert(const unsigned short& StartWrittingIndex, const StringKernel& Source, const unsigned short& StartReadingIndex,
 		const unsigned short& StopReadingIndex)
 	{
 		Insert(StartWrittingIndex, Source._Begin, StartReadingIndex, StopReadingIndex);
 	}
 
-	void Insert(const unsigned short& StartWrittingIndex, StringKernel& Source)
+	void Insert(const unsigned short& StartWrittingIndex, const StringKernel& Source)
 	{
 		Insert(StartWrittingIndex, Source._Begin, 0, Source.Length() - 2);
 	}
@@ -333,7 +368,7 @@ public:
 		Preppend(Source, _Length(Source, _GetLogicalEnd(Source)));
 	}
 
-	void Preppend(StringKernel& Source)
+	void Preppend(const StringKernel& Source)
 	{
 		Preppend(Source._Begin, Source.Length());
 	}
@@ -346,7 +381,7 @@ public:
 
 	}
 
-	char at(const unsigned short& Index)
+	char at(const unsigned short& Index) const
 	{
 		char* AtAddress = _Begin + Index;
 
@@ -375,33 +410,7 @@ public:
 		}
 	}
 
-	/*static char* Find(const char* TextFirstAddress, const char* TextLastAddress, const char* WordFirstAddress,
-		const char* WordLastAddress, const _enStartFrom& StartReadingFrom = _Left)
-	{
-		bool IsFound = false;
-		--WordLastAddress;
-
-		if (StartReadingFrom == _Left)
-		{
-			while ((TextFirstAddress < TextLastAddress) && !IsFound)
-			{
-				WordFirstAddress += *TextFirstAddress++ == *WordFirstAddress ? 1 : 0;
-
-				IsFound = WordFirstAddress == WordLastAddress;
-			}
-
-		}
-		else
-		{
-
-		}
-
-
-	}*/
-
-
-
-	void Print()
+	void Print() const
 	{
 		char* BeginCopy = _Begin;
 

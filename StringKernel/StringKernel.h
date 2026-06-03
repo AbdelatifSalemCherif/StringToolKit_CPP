@@ -133,11 +133,11 @@ protected:
 		}
 	}
 
-	void _Swap2Address(const char*& Address1, const char*& Address2)
+	void _Swap2Address(const char** Address1, const char** Address2)
 	{
-		const char* TempAddress = Address1;
-		Address1 = Address2;
-		Address2 = TempAddress;
+		const char* TempAddress = *Address1;
+		*Address1 = *Address2;
+		*Address2 = TempAddress;
 	}
 
 	enum _enThreading {_Necklace, _Beads};
@@ -150,24 +150,32 @@ protected:
 		_enStartFrom StartSearchFrom = _Left, _enThreading NeedleThreading = _Necklace, _enSearchFor SearchFor = _Sheep
 		, _enCaseSensitivity CaseSensitivity = _Sensitive) const
 	{
-		bool IsFound = false;
-
+		
 		const char* HaystackReader = HaystackBegin, * NeedleReader = NeedleBegin;
 
-		while (!IsFound && HaystackReader < HaystackEnd)
+		while (HaystackReader < HaystackEnd)
 		{
-			if (*HaystackReader++ == *NeedleReader++)
+			if (*HaystackReader == *NeedleReader)
 			{
-				if (NeedleReader == NeedleEnd + 1)
+				
+				if (NeedleReader == NeedleEnd)
 				{
-					return (char*) HaystackReader - _Length(NeedleBegin, NeedleEnd);
+					return (char*)HaystackReader - _Length(NeedleBegin, NeedleEnd) + 1;
+				}
+				else
+				{
+					NeedleReader++;
 				}
 			}
-			else
+			else if (NeedleReader > NeedleBegin)
 			{
+				HaystackReader -= NeedleReader - NeedleBegin;
+
 				NeedleReader = NeedleBegin;
+				
 			}
 
+			HaystackReader++;
 		}
 
 		return nullptr;
@@ -195,23 +203,27 @@ public:
 		_LogicalEnd = _Write(_Begin, Value, _GetLogicalEnd(Value, ValueLength), _Left);
 	}
 
-	StringKernel(const char Value[])
+	StringKernel(const char Value[]) : StringKernel(Value, _Length(Value, _GetLogicalEnd(Value)))
 	{
-
-		StringKernel(Value, _Length(Value, _GetLogicalEnd(Value)));
 
 	}
 
-	StringKernel(StringKernel& Value)
+	StringKernel(const StringKernel& Value) : StringKernel(Value._Begin, Value.Length())
 	{
-
-		StringKernel(Value._Begin, Value.Length());
+		
 
 	}
 
 	~StringKernel()
 	{
+		cout << "Hi Destructor !" << endl;
+
 		delete[] _Begin;
+	}
+
+	const char* Value()
+	{
+		return _Begin;
 	}
 
 	void Clear()
@@ -375,9 +387,9 @@ public:
 
 	void Swap(StringKernel& Data2)
 	{
-		_Swap2Address(_Begin, Data2._Begin);
-		_Swap2Address(_LogicalEnd, Data2._LogicalEnd);
-		_Swap2Address(_PhysicalEnd, Data2._PhysicalEnd);
+		_Swap2Address((const char**)& _Begin, (const char**)& Data2._Begin);
+		_Swap2Address((const char**)& _LogicalEnd, (const char**)& Data2._LogicalEnd);
+		_Swap2Address((const char**)& _PhysicalEnd, (const char**)& Data2._PhysicalEnd);
 
 	}
 
@@ -408,6 +420,15 @@ public:
 		{
 			Clear();
 		}
+	}
+
+	unsigned short SearchSheepMasslyFromLeft(const unsigned short& HaystackBeginIndex, const unsigned short& HaystackEndIndex
+		, const char* Needle, const unsigned short& NeedleBeginIndex, const unsigned short& NeedleEndIndex)
+	{
+		char * Position = _Search(_Begin + HaystackBeginIndex, _Begin + HaystackEndIndex, Needle + NeedleBeginIndex
+			, Needle + NeedleEndIndex);
+
+		return (Position == nullptr) ? -1 : (Position - _Begin);
 	}
 
 	void Print() const

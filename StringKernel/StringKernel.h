@@ -6,6 +6,7 @@ using namespace std;
 
 class StringKernel
 {
+
 protected:
 
 	char* _Begin;
@@ -133,56 +134,175 @@ protected:
 		}
 	}
 
-	void _Swap2Address(const char** Address1, const char** Address2)
+	void _Swap2Address(const char** Address1, const char** Address2) const
 	{
 		const char* TempAddress = *Address1;
 		*Address1 = *Address2;
 		*Address2 = TempAddress;
 	}
 
-	enum _enThreading {_Necklace, _Beads};
-
-	enum _enSearchFor {_Sheep, _Wolf};
-
-	enum _enCaseSensitivity {_Sensitive, _Insensitive};
-
-	char* _Search(const char* HaystackBegin, const char* HaystackEnd, const char* NeedleBegin, const char* NeedleEnd,
-		_enStartFrom StartSearchFrom = _Left, _enThreading NeedleThreading = _Necklace, _enSearchFor SearchFor = _Sheep
-		, _enCaseSensitivity CaseSensitivity = _Sensitive) const
+	void _Swap2Indices(unsigned short& Index1, unsigned short& Index2) const
 	{
-		
-		const char* HaystackReader = HaystackBegin, * NeedleReader = NeedleBegin;
+		unsigned short TempIndex = Index1;
+		Index1 = Index2;
+		Index2 = TempIndex;
+	}
 
-		while (HaystackReader < HaystackEnd)
+	unsigned short _HandleEndIndex(const char* Begin, const char* End, unsigned short EndIndex) const
+	{
+		return (EndIndex > End - Begin) ? End - Begin: EndIndex; 
+	}
+
+	char* _SearchNecklaceFromLeft(const char* CofferBegin, const char* CofferEnd, const char* NecklaceBegin
+		, const char* NecklaceEnd) const
+	{
+		const char* CofferReader = CofferBegin, * NecklaceReader = NecklaceBegin;
+
+		while (CofferReader <= CofferEnd)
 		{
-			if (*HaystackReader == *NeedleReader)
+			if (*CofferReader == *NecklaceReader)
 			{
-				
-				if (NeedleReader == NeedleEnd)
+
+				if (NecklaceReader == NecklaceEnd)
 				{
-					return (SearchFor == _Sheep) ? (char*)HaystackReader - _Length(NeedleBegin, NeedleEnd) + 1 :
-						(char*)HaystackReader + 1;
+					return (char*) CofferReader - (NecklaceEnd - NecklaceBegin);
 				}
 				else
 				{
-					NeedleReader++;
+					NecklaceReader++;
 				}
 			}
-			else if (NeedleReader > NeedleBegin)
+			else if (NecklaceReader > NecklaceBegin)
 			{
-				HaystackReader -= NeedleReader - NeedleBegin;
+				CofferReader -= NecklaceReader - NecklaceBegin;
 
-				NeedleReader = NeedleBegin;
-				
+				NecklaceReader = NecklaceBegin;
+
 			}
 
-			HaystackReader++;
+			CofferReader++;
+		}
+
+		return nullptr;
+	}
+
+	char* _SearchNecklaceFromRight(const char* CofferBegin, const char* CofferEnd, const char* NecklaceBegin
+		, const char* NecklaceEnd) const
+	{
+		const char* CofferReader = CofferEnd, * NecklaceReader = NecklaceEnd;
+
+		while (CofferReader >= CofferBegin)
+		{
+			if (*CofferReader == *NecklaceReader)
+			{
+
+				if (NecklaceReader == NecklaceBegin)
+				{
+					return (char*) CofferReader;
+				}
+				else
+				{
+					NecklaceReader--;
+				}
+			}
+			else if (NecklaceReader < NecklaceEnd)
+			{
+				CofferReader += NecklaceEnd - NecklaceReader;
+
+				NecklaceReader = NecklaceEnd;
+
+			}
+
+			CofferReader--;
+		}
+
+		return nullptr;
+	}
+
+	char* _SearchGemFromLeft(const char* CofferBegin, const char* CofferEnd, const char* FirstGem, const char* LastGem) const
+	{
+		const char* CofferReader = CofferBegin, * GemsReader = FirstGem;
+
+		while (CofferReader <= CofferEnd)
+		{
+			while (GemsReader <= LastGem)
+			{
+				if (*CofferReader == *GemsReader)
+				{
+					return (char*) CofferReader;
+				}
+
+				GemsReader++;
+			}
+
+			GemsReader = FirstGem;
+			CofferReader++;
+		}
+	
+
+		return nullptr;
+	}
+
+	char* _SearchPebbleFromLeft(const char* CofferBegin, const char* CofferEnd, const char* FirstGem, const char* LastGem) const
+	{
+		const char* CofferReader = CofferBegin;
+
+		while (CofferReader <= CofferEnd)
+		{
+			if (_SearchGemFromLeft(FirstGem, LastGem, CofferReader, CofferReader) == nullptr)
+			{
+				return (char*) CofferReader;
+			}
+
+			CofferReader++;
+		}
+
+		return nullptr;
+	}
+
+	char* _SearchGemFromRight(const char* CofferBegin, const char* CofferEnd, const char* FirstGem, const char* LastGem) const
+	{
+		const char* CofferReader = CofferEnd, * GemsReader = LastGem;
+
+		while (CofferReader >= CofferBegin)
+		{
+			while (GemsReader >= LastGem)
+			{
+				if (*CofferReader == *GemsReader)
+				{
+					return (char*)CofferReader;
+				}
+
+				GemsReader--;
+			}
+
+			GemsReader = LastGem;
+			CofferReader--;
+		}
+
+		return nullptr;
+	}
+
+	char* _SearchPebbleFromRight(const char* CofferBegin, const char* CofferEnd, const char* FirstGem, const char* LastGem) const
+	{
+		const char* CofferReader = CofferEnd, * GemsReader = LastGem;
+
+		while (CofferReader >= CofferBegin)
+		{
+			if (_SearchGemFromLeft(FirstGem, LastGem, CofferReader, CofferReader) == nullptr)
+			{
+				return (char*)CofferReader;
+			}
+
+			CofferReader--;
 		}
 
 		return nullptr;
 	}
 
 public:
+
+	const unsigned short NoPosition = -1;
 
 	StringKernel()
 	{
@@ -222,7 +342,7 @@ public:
 		delete[] _Begin;
 	}
 
-	const char* Value()
+	const char const* Value()
 	{
 		return _Begin;
 	}
@@ -281,7 +401,6 @@ public:
 	void Concatenate(const char Source1[], const unsigned short & Source1Length, const char Source2[]
 		, const unsigned short& Source2Length)
 	{
-		//213472275300
 
 		_HandlePhysicalSpace(Source1Length + Source2Length - 1, false);
 
@@ -423,13 +542,120 @@ public:
 		}
 	}
 
-	unsigned short SearchSheepMasslyFromLeft(const unsigned short& HaystackBeginIndex, const unsigned short& HaystackEndIndex
-		, const char* Needle, const unsigned short& NeedleBeginIndex, const unsigned short& NeedleEndIndex)
+	unsigned short SearchNecklaceFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Necklace[]
+		, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
 	{
-		char * Position = _Search(_Begin + HaystackBeginIndex, _Begin + HaystackEndIndex, Needle + NeedleBeginIndex
-			, Needle + NeedleEndIndex);
 
-		return (Position == nullptr) ? -1 : (Position - _Begin);
+		if (CofferBeginIndex > CofferEndIndex || NecklaceBeginIndex > NecklaceEndIndex || 
+			(NecklaceEndIndex - NecklaceBeginIndex) > (CofferEndIndex - CofferBeginIndex))
+		{
+			return NoPosition;
+		}
+
+		CofferEndIndex = _HandleEndIndex(_Begin, _LogicalEnd - 1, CofferEndIndex);
+
+		NecklaceEndIndex = _HandleEndIndex(Necklace, _GetLogicalEnd(Necklace) - 1, NecklaceEndIndex);
+
+		char * Position = _SearchNecklaceFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace + NecklaceBeginIndex
+			, Necklace + NecklaceEndIndex);
+
+		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+
+	}
+
+	unsigned short SearchNecklaceFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Necklace[]
+		, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
+	{
+		if (CofferBeginIndex > CofferEndIndex || NecklaceBeginIndex > NecklaceEndIndex ||
+			(NecklaceEndIndex - NecklaceBeginIndex) > (CofferEndIndex - CofferBeginIndex))
+		{
+			return NoPosition;
+		}
+
+		CofferEndIndex = _HandleEndIndex(_Begin, _LogicalEnd - 1, CofferEndIndex);
+
+		NecklaceEndIndex = _HandleEndIndex(Necklace, _GetLogicalEnd(Necklace) - 1, NecklaceEndIndex);
+
+		char* Position = _SearchNecklaceFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace + NecklaceBeginIndex
+			, Necklace + NecklaceEndIndex);
+
+		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+	}
+
+	unsigned short SearchGemFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Necklace[]
+		, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
+	{
+		if (CofferBeginIndex > CofferEndIndex || NecklaceBeginIndex > NecklaceEndIndex ||
+			(NecklaceEndIndex - NecklaceBeginIndex) > (CofferEndIndex - CofferBeginIndex))
+		{
+			return NoPosition;
+		}
+
+		CofferEndIndex = _HandleEndIndex(_Begin, _LogicalEnd - 1, CofferEndIndex);
+
+		NecklaceEndIndex = _HandleEndIndex(Necklace, _GetLogicalEnd(Necklace) - 1, NecklaceEndIndex);
+
+		char* Position = _SearchGemFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace + NecklaceBeginIndex
+			, Necklace + NecklaceEndIndex);
+
+		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+	}
+
+	unsigned short SearchPebbleFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Necklace[]
+		, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
+	{
+		if (CofferBeginIndex > CofferEndIndex || NecklaceBeginIndex > NecklaceEndIndex ||
+			(NecklaceEndIndex - NecklaceBeginIndex) > (CofferEndIndex - CofferBeginIndex))
+		{
+			return NoPosition;
+		}
+
+		CofferEndIndex = _HandleEndIndex(_Begin, _LogicalEnd - 1, CofferEndIndex);
+
+		NecklaceEndIndex = _HandleEndIndex(Necklace, _GetLogicalEnd(Necklace) - 1, NecklaceEndIndex);
+
+		char* Position = _SearchPebbleFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace + NecklaceBeginIndex
+			, Necklace + NecklaceEndIndex);
+
+		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+	}
+
+	unsigned short SearchGemFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Necklace[]
+		, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
+	{
+		if (CofferBeginIndex > CofferEndIndex || NecklaceBeginIndex > NecklaceEndIndex ||
+			(NecklaceEndIndex - NecklaceBeginIndex) > (CofferEndIndex - CofferBeginIndex))
+		{
+			return NoPosition;
+		}
+
+		CofferEndIndex = _HandleEndIndex(_Begin, _LogicalEnd - 1, CofferEndIndex);
+
+		NecklaceEndIndex = _HandleEndIndex(Necklace, _GetLogicalEnd(Necklace) - 1, NecklaceEndIndex);
+
+		char* Position = _SearchGemFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace + NecklaceBeginIndex
+			, Necklace + NecklaceEndIndex);
+
+		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+	}
+
+	unsigned short SearchPebbleFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Necklace[]
+		, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
+	{
+		if (CofferBeginIndex > CofferEndIndex || NecklaceBeginIndex > NecklaceEndIndex ||
+			(NecklaceEndIndex - NecklaceBeginIndex) > (CofferEndIndex - CofferBeginIndex))
+		{
+			return NoPosition;
+		}
+
+		CofferEndIndex = _HandleEndIndex(_Begin, _LogicalEnd - 1, CofferEndIndex);
+
+		NecklaceEndIndex = _HandleEndIndex(Necklace, _GetLogicalEnd(Necklace) - 1, NecklaceEndIndex);
+
+		char* Position = _SearchPebbleFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace + NecklaceBeginIndex
+			, Necklace + NecklaceEndIndex);
+
+		return (Position == nullptr) ? NoPosition : (Position - _Begin);
 	}
 
 	void Print() const

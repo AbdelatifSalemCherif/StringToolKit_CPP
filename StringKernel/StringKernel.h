@@ -160,7 +160,8 @@ protected:
 				
 				if (NeedleReader == NeedleEnd)
 				{
-					return (char*)HaystackReader - _Length(NeedleBegin, NeedleEnd) + 1;
+					return (SearchFor == _Sheep) ? (char*)HaystackReader - _Length(NeedleBegin, NeedleEnd) + 1 :
+						(char*)HaystackReader + 1;
 				}
 				else
 				{

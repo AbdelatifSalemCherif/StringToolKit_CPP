@@ -4,12 +4,20 @@
 
 using namespace std;
 
+unsigned short _GetNewCapacity(unsigned short NewLength) 
+{
+
+	return (NewLength + 15) & ~15;
+}
+
 int main()
 {
 
-	StringKernel Abdou("TTTTTTTTTTTTLML");
+	cout << _GetNewCapacity(0);
 
-	cout << (signed short) Abdou.SearchSheepMasslyFromLeft(0, 14, "TTL", 0, 2) << endl;
+	
+
+	
 
 
 }

@@ -475,35 +475,73 @@ public:
 	void Insert(const unsigned short & StartWrittingIndex, const char Source[], const unsigned short& StartReadingIndex, 
 		const unsigned short& StopReadingIndex)
 	{
-		const char* SourceLogicalEnd = _GetLogicalEnd(Source);
+		if (StartWrittingIndex < Length() - 1)
+		{
+			const char* SourceLogicalEnd = _GetLogicalEnd(Source);
 
+			if (StartReadingIndex < _Length(Source, SourceLogicalEnd) - 1)
+			{
+				_HandleEndIndex(Source, SourceLogicalEnd - 1, StopReadingIndex);
 
+				unsigned short Offset = StopReadingIndex - StartReadingIndex + 1;
 
+				_HandlePhysicalSpace(Length() + Offset, true);
 
-		unsigned short Offset = StopReadingIndex - StartReadingIndex + 1;
+				_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
 
-		_HandlePhysicalSpace(Length() + Offset, true);
-
-		_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
-
-		_Write(_Begin + StartWrittingIndex, Source + StartReadingIndex, Source + StopReadingIndex, _Left);
-
+				_Write(_Begin + StartWrittingIndex, Source + StartReadingIndex, Source + StopReadingIndex, _Left);
+			}
+		}
 	}
 
 	void Insert(const unsigned short& StartWrittingIndex, const char Source[])
 	{		
-		Insert(StartWrittingIndex, Source, 0, _GetLogicalEnd(Source) - Source - 1);
+	
+		if (StartWrittingIndex < Length() - 1)
+		{
+			const char* SourceLogicalEnd = _GetLogicalEnd(Source);
+
+			unsigned short Offset = _Length(Source, SourceLogicalEnd) - 1;
+
+			_HandlePhysicalSpace(Length() + Offset, true);
+
+			_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
+
+			_Write(_Begin + StartWrittingIndex, Source, SourceLogicalEnd - 1, _Left);
+		}
 	}
 
 	void Insert(const unsigned short& StartWrittingIndex, const StringKernel& Source, const unsigned short& StartReadingIndex,
 		const unsigned short& StopReadingIndex)
 	{
-		Insert(StartWrittingIndex, Source._Begin, StartReadingIndex, StopReadingIndex);
+		if (StartReadingIndex < Source.Length() - 1 || StartWrittingIndex < Length() - 1)
+		{
+			_HandleEndIndex(Source._Begin, Source._LogicalEnd - 1, StopReadingIndex);
+
+			unsigned short Offset = StopReadingIndex - StartReadingIndex + 1;
+
+			_HandlePhysicalSpace(Length() + Offset, true);
+
+			_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
+
+			_Write(_Begin + StartWrittingIndex, Source._Begin + StartReadingIndex, Source._Begin + StopReadingIndex, _Left);
+		}
+			
 	}
 
 	void Insert(const unsigned short& StartWrittingIndex, const StringKernel& Source)
 	{
-		Insert(StartWrittingIndex, Source._Begin, 0, Source.Length() - 2);
+		if (StartWrittingIndex < Length() - 1)
+		{
+
+			unsigned short Offset = Source.Length() - 1;
+
+			_HandlePhysicalSpace(Length() + Offset, true);
+
+			_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
+
+			_Write(_Begin + StartWrittingIndex, Source._Begin, Source._LogicalEnd - 1, _Left);
+		}
 	}
 
 	void Delete(const unsigned short& StartDeleteIndex, const unsigned short& EndDeleteIndex)
@@ -889,10 +927,13 @@ public:
 		return (Position == nullptr) ? NoPosition : (Position - _Begin);
 	}
 
-	void Replace(unsigned short StartWritingIndex, unsigned short StopWritingIndex, unsigned short StartReadingIndex,
-		unsigned short StopReadingIndex)
+	void Replace(unsigned short StartWritingIndex, unsigned short StopWritingIndex, const char Source[],
+		unsigned short StartReadingIndex, unsigned short StopReadingIndex)
 	{
+		/*if ()
+		{
 
+		}*/
 	}
 
 

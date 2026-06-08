@@ -134,6 +134,61 @@ protected:
 		}
 	}
 
+	void _Assignement(const char* SourceBegin, const char* SourceLogicalEnd)
+	{
+
+		_HandlePhysicalSpace(_Length(SourceBegin, SourceLogicalEnd), false);
+
+		_LogicalEnd = _Write(_Begin, SourceBegin, SourceLogicalEnd, _Left);
+	}
+
+	void _Concatenate(const char* Source1Begin, const char* Source1LogicalEnd, const char* Source2Begin, const char* Source2LogicalEnd)
+	{
+
+		_HandlePhysicalSpace(_Length(Source1Begin, Source1LogicalEnd) + _Length(Source2Begin, Source2LogicalEnd) - 1, false);
+
+		if (Source1LogicalEnd > Source1Begin)
+		{
+			_LogicalEnd = _Write(_Begin, Source1Begin, Source1LogicalEnd - 1, _Left);
+		}
+		else
+		{
+			_LogicalEnd = _Begin;
+		}
+
+		_LogicalEnd = _Write(_LogicalEnd + 1, Source2Begin, Source2LogicalEnd, _Left);
+	}
+
+	void _Append(const char* SourceBegin, const char* SourceLogicalEnd)
+	{
+
+		_HandlePhysicalSpace(Length() + _Length(SourceBegin, SourceLogicalEnd) - 1, true);
+
+		_LogicalEnd = _Write(_LogicalEnd, SourceBegin, SourceLogicalEnd, _Left);
+
+	}
+
+	void _Insert(const char* StartWritting, const char* SourceBegin, const char* StartReading, const char* StopReading)
+	{
+		if (StartWritting < Length() - 1)
+		{
+			const char* SourceLogicalEnd = _GetLogicalEnd(Source);
+
+			if (StartReadingIndex < _Length(Source, SourceLogicalEnd) - 1)
+			{
+				_HandleEndIndex(Source, SourceLogicalEnd - 1, StopReadingIndex);
+
+				unsigned short Offset = StopReadingIndex - StartReadingIndex + 1;
+
+				_HandlePhysicalSpace(Length() + Offset, true);
+
+				_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
+
+				_Write(_Begin + StartWrittingIndex, Source + StartReadingIndex, Source + StopReadingIndex, _Left);
+			}
+		}
+	}
+
 	void _Swap2Address(const char** Address1, const char** Address2) const
 	{
 		const char* TempAddress = *Address1;
@@ -302,7 +357,7 @@ protected:
 
 public:
 
-	const unsigned short NoPosition = -1;
+	static const unsigned short NoPosition = -1;
 
 	StringKernel()
 	{
@@ -313,37 +368,29 @@ public:
 		Clear();
 	}
 
-	StringKernel(const char Value[], unsigned short ValueLength)
+	StringKernel(const char Value[])
 	{
-		if (ValueLength == 0)
-		{
-			ValueLength = 1;
-		}
+		const char* ValueLogicalEnd = _GetLogicalEnd(Value);
 
-		const unsigned short Capacity = _GetNewCapacity(ValueLength);
+		const unsigned short Capacity = _GetNewCapacity(_Length(Value, ValueLogicalEnd));
 
 		_Begin = new char[Capacity];
 
 		_PhysicalEnd = _GetNewPhysicalEnd(Capacity);
 
-		if (ValueLength == 1)
-		{
-			Clear();
-		}
-		else
-		{
-			_LogicalEnd = _Write(_Begin, Value, _GetLogicalEnd(Value, ValueLength), _Left);
-		}
-	}
-
-	StringKernel(const char Value[]) : StringKernel(Value, _Length(Value, _GetLogicalEnd(Value)))
-	{
+		_LogicalEnd = _Write(_Begin, Value, ValueLogicalEnd, _Left);
 
 	}
 
-	StringKernel(const StringKernel& Value) : StringKernel(Value._Begin, Value.Length())
+	StringKernel(const StringKernel& Value)
 	{
-		
+		const unsigned short Capacity = _GetNewCapacity(Value.Length());
+
+		_Begin = new char[Capacity];
+
+		_PhysicalEnd = _GetNewPhysicalEnd(Capacity);
+
+		_LogicalEnd = _Write(_Begin, Value._Begin, Value._LogicalEnd, _Left);
 
 	}
 
@@ -354,7 +401,7 @@ public:
 		delete[] _Begin;
 	}
 
-	const char* Value()
+	const char* Value() const
 	{
 		return _Begin;
 	}
@@ -394,82 +441,52 @@ public:
 
 	void Assignment(const char Source[])
 	{
-		const char* SourceLogicalEnd = _GetLogicalEnd(Source);
-
-		_HandlePhysicalSpace(_Length(Source, SourceLogicalEnd), false);
-
-		_LogicalEnd = _Write(_Begin, Source, SourceLogicalEnd, _Left);
+		_Assignement(Source, _GetLogicalEnd(Source));
 	}
 
 	void Assignment(const StringKernel& Source)
 	{
-		_HandlePhysicalSpace(Source.Length(), false);
-
-		_LogicalEnd = _Write(_Begin, Source._Begin, Source._LogicalEnd, _Left);
+		_Assignement(Source._Begin, Source._LogicalEnd);
 	}
 
 	void Copy(const char Source[])
 	{
-		Assignment(Source);
+		_Assignement(Source, _GetLogicalEnd(Source));
 	}
 
 	void Copy(const StringKernel& Source)
 	{
-		Assignment(Source);
+		_Assignement(Source._Begin, Source._LogicalEnd);
 	}
 
 	void Concatenate(const char Source1[], const char Source2[])
 	{
-		const char* Source1LogicalEnd = _GetLogicalEnd(Source1), * Source2LogicalEnd = _GetLogicalEnd(Source2);
-
-		_HandlePhysicalSpace(_Length(Source1, Source1LogicalEnd) + _Length(Source2, Source2LogicalEnd) - 1, false);
-
-		_LogicalEnd = _Write(_Begin, Source1, Source1LogicalEnd - 1, _Left);
-
-		_LogicalEnd = _Write(_LogicalEnd + 1, Source2, Source2LogicalEnd, _Left);
-
+		_Concatenate(Source1, _GetLogicalEnd(Source1), Source2, _GetLogicalEnd(Source2));
 	}
 
 	void Concatenate(const char Source1[], const StringKernel& Source2)
 	{
-		const char* Source1LogicalEnd = _GetLogicalEnd(Source1);
-
-		_HandlePhysicalSpace(_Length(Source1, Source1LogicalEnd) + Source2.Length() - 1, false);
-
-		_LogicalEnd = _Write(_Begin, Source1, Source1LogicalEnd - 1, _Left);
-
-		_LogicalEnd = _Write(_LogicalEnd + 1, Source2._Begin, Source2._LogicalEnd, _Left);
+		_Concatenate(Source1, _GetLogicalEnd(Source1), Source2._Begin, Source2._LogicalEnd);
 	}
 
 	void Concatenate(const StringKernel& Source1, const char Source2[])
 	{
-		Concatenate(Source2, Source1);
+		_Concatenate(Source1._Begin, Source1._LogicalEnd, Source2, _GetLogicalEnd(Source2));
 	}
 
 	void Concatenate(const StringKernel& Source1, const StringKernel& Source2)
 	{
-		_HandlePhysicalSpace(Source1.Length() + Source2.Length() - 1, false);
-
-		_LogicalEnd = _Write(_Begin, Source1._Begin, Source1._LogicalEnd - 1, _Left);
-
-		_LogicalEnd = _Write(_LogicalEnd + 1, Source2._Begin, Source2._LogicalEnd, _Left);
+		_Concatenate(Source1._Begin, Source1._LogicalEnd, Source2._Begin, Source2._LogicalEnd);
 	}
 
 	void Append(const char Source[])
 	{
-		const char* SourceLogicalEnd = _GetLogicalEnd(Source);
-
-		_HandlePhysicalSpace(Length() + _Length(Source, SourceLogicalEnd) - 1, true);
-
-		_LogicalEnd = _Write(_LogicalEnd, Source, SourceLogicalEnd, _Left);
-
+		_Append(Source, _GetLogicalEnd(Source));
 	}
 
 	void Append(const StringKernel& Source)
 	{
-		_HandlePhysicalSpace(Length() + Source.Length() - 1, true);
-
-		_LogicalEnd = _Write(_LogicalEnd, Source._Begin, Source._LogicalEnd, _Left);
+		_Append(Source._Begin, Source._LogicalEnd);
 	}
 
 	void Insert(const unsigned short & StartWrittingIndex, const char Source[], const unsigned short& StartReadingIndex, 

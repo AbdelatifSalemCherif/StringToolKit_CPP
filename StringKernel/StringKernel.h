@@ -236,34 +236,43 @@ protected:
 		return _IsAddressWithinRange(Begin, End, Address) ? Address : End;
 	}
 
-	char* _SearchNecklaceFromLeft(const char* CofferBegin, const char* CofferEnd, const char* NecklaceBegin
-		, const char* NecklaceEnd) const
+	char* _SearchNecklaceFromLeft(const char* StartReadingCoffer, const char* StopReadingCoffer, const char* NecklaceBegin, 
+		const char* NecklaceLogicalEnd, const char* StartReadingNecklace, const char* StopReadingNecklace) const
 	{
-		const char* CofferReader = CofferBegin, * NecklaceReader = NecklaceBegin;
 
-		while (CofferReader <= CofferEnd)
+		StopReadingCoffer = _HandleAddressWithinRange(_Begin, _LogicalEnd - 1, StopReadingCoffer);
+
+		StopReadingNecklace = _HandleAddressWithinRange(NecklaceBegin, NecklaceLogicalEnd - 1, StopReadingNecklace);
+
+		if (StartReadingCoffer <= StopReadingCoffer && StartReadingNecklace <= StopReadingNecklace &&
+			_Length(StartReadingCoffer, StopReadingCoffer) >= _Length(StartReadingNecklace, StopReadingNecklace))
 		{
-			if (*CofferReader == *NecklaceReader)
+			const char* CofferReader = StartReadingCoffer, * NecklaceReader = StartReadingNecklace;
+
+			while (CofferReader <= StopReadingCoffer)
 			{
-
-				if (NecklaceReader == NecklaceEnd)
+				if (*CofferReader == *NecklaceReader)
 				{
-					return (char*) CofferReader - (NecklaceEnd - NecklaceBegin);
+
+					if (NecklaceReader == StopReadingNecklace)
+					{
+						return (char*)CofferReader - (StopReadingNecklace - StartReadingNecklace);
+					}
+					else
+					{
+						NecklaceReader++;
+					}
 				}
-				else
+				else if (NecklaceReader > StartReadingNecklace)
 				{
-					NecklaceReader++;
+					CofferReader -= NecklaceReader - StartReadingNecklace;
+
+					NecklaceReader = StartReadingNecklace;
+
 				}
+
+				CofferReader++;
 			}
-			else if (NecklaceReader > NecklaceBegin)
-			{
-				CofferReader -= NecklaceReader - NecklaceBegin;
-
-				NecklaceReader = NecklaceBegin;
-
-			}
-
-			CofferReader++;
 		}
 
 		return nullptr;
@@ -597,18 +606,29 @@ public:
 		, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
 	{
 
-		if (CofferBeginIndex > CofferEndIndex || NecklaceBeginIndex > NecklaceEndIndex || 
-			(NecklaceEndIndex - NecklaceBeginIndex) > (CofferEndIndex - CofferBeginIndex))
-		{
-			return NoPosition;
-		}
+		char * Position = _SearchNecklaceFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace, _GetLogicalEnd(Necklace)
+			,Necklace + NecklaceBeginIndex, Necklace + NecklaceEndIndex);
 
-		CofferEndIndex = _HandleEndIndex(_Begin, _LogicalEnd - 1, CofferEndIndex);
+		return (Position == nullptr) ? NoPosition : (Position - _Begin);
 
-		NecklaceEndIndex = _HandleEndIndex(Necklace, _GetLogicalEnd(Necklace) - 1, NecklaceEndIndex);
+	}
 
-		char * Position = _SearchNecklaceFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace + NecklaceBeginIndex
-			, Necklace + NecklaceEndIndex);
+	unsigned short SearchNecklaceFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Necklace[]) const
+	{
+		const char* NecklaceLogicalEnd = _GetLogicalEnd(Necklace);
+
+		char* Position = _SearchNecklaceFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace, NecklaceLogicalEnd
+			, Necklace, NecklaceLogicalEnd - 1);
+
+		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+
+	}
+
+	unsigned short SearchNecklaceFromLeft(const char Necklace[], unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
+	{
+
+		char* Position = _SearchNecklaceFromLeft(_Begin, _LogicalEnd - 1, Necklace, _GetLogicalEnd(Necklace)
+			, Necklace + NecklaceBeginIndex, Necklace + NecklaceEndIndex);
 
 		return (Position == nullptr) ? NoPosition : (Position - _Begin);
 
@@ -616,7 +636,10 @@ public:
 
 	unsigned short SearchNecklaceFromLeft(const char Necklace[]) const
 	{
-		char* Position = _SearchNecklaceFromLeft(_Begin, _LogicalEnd - 1, Necklace, _GetLogicalEnd(Necklace) - 1);
+		const char* NecklaceLogicalEnd = _GetLogicalEnd(Necklace);
+
+		char* Position = _SearchNecklaceFromLeft(_Begin, _LogicalEnd - 1, Necklace, NecklaceLogicalEnd, Necklace
+			, NecklaceLogicalEnd - 1);
 
 		return (Position == nullptr) ? NoPosition : (Position - _Begin);
 	}
@@ -624,26 +647,38 @@ public:
 	unsigned short SearchNecklaceFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Necklace
 	, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
 	{
-		if (CofferBeginIndex > CofferEndIndex || NecklaceBeginIndex > NecklaceEndIndex ||
-			(NecklaceEndIndex - NecklaceBeginIndex) > (CofferEndIndex - CofferBeginIndex))
-		{
-			return NoPosition;
-		}
-
-		CofferEndIndex = _HandleEndIndex(_Begin, _LogicalEnd - 1, CofferEndIndex);
-
-		NecklaceEndIndex = _HandleEndIndex(Necklace._Begin, Necklace._LogicalEnd - 1, NecklaceEndIndex);
-
-		char* Position = _SearchNecklaceFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace._Begin + NecklaceBeginIndex
-			, Necklace._LogicalEnd + NecklaceEndIndex);
+		
+		char* Position = _SearchNecklaceFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace._Begin
+			, Necklace._LogicalEnd, Necklace._Begin + NecklaceBeginIndex, Necklace._Begin + NecklaceEndIndex);
 
 		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+	}
+
+	unsigned short SearchNecklaceFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Necklace) const
+	{
+
+		char* Position = _SearchNecklaceFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace._Begin
+			, Necklace._LogicalEnd, Necklace._Begin, Necklace._LogicalEnd - 1);
+
+		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+
+	}
+
+	unsigned short SearchNecklaceFromLeft(StringKernel& Necklace, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
+	{
+
+		char* Position = _SearchNecklaceFromLeft(_Begin, _LogicalEnd - 1, Necklace._Begin, Necklace._LogicalEnd
+			, Necklace._Begin + NecklaceBeginIndex, Necklace._Begin + NecklaceEndIndex);
+
+		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+
 	}
 
 	unsigned short SearchNecklaceFromLeft(StringKernel& Necklace) const
 	{
 		
-		char* Position = _SearchNecklaceFromLeft(_Begin, _LogicalEnd - 1, Necklace._Begin, Necklace._LogicalEnd - 1);
+		char* Position = _SearchNecklaceFromLeft(_Begin, _LogicalEnd - 1, Necklace._Begin, Necklace._LogicalEnd, 
+			Necklace._Begin, Necklace._LogicalEnd - 1);
 
 		return (Position == nullptr) ? NoPosition : (Position - _Begin);
 	}

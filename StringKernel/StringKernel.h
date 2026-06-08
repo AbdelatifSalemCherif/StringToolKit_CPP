@@ -591,10 +591,6 @@ public:
 			_LogicalEnd--;
 			_AddStopCharacter();
 		}
-		else
-		{
-			Clear();
-		}
 	}
 
 	unsigned short SearchNecklaceFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Necklace[]

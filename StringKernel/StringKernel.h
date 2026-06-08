@@ -168,25 +168,43 @@ protected:
 
 	}
 
-	void _Insert(const char* StartWritting, const char* SourceBegin, const char* StartReading, const char* StopReading)
+	void _Insert(char* StartWritting, const char* SourceBegin, const char* SourceLogicalEnd, const char* StartReading
+		, const char* StopReading)
 	{
-		if (StartWritting < Length() - 1)
+
+		StopReading = _HandleAddressWithinRange(SourceBegin, SourceLogicalEnd - 1, StopReading);
+
+		if (StartReading <= StopReading)
 		{
-			const char* SourceLogicalEnd = _GetLogicalEnd(Source);
+			StartWritting = (char*)_HandleAddressWithinRange(_Begin, _LogicalEnd, StartWritting);
 
-			if (StartReadingIndex < _Length(Source, SourceLogicalEnd) - 1)
-			{
-				_HandleEndIndex(Source, SourceLogicalEnd - 1, StopReadingIndex);
+			unsigned short Offset = StopReading - StartReading + 1;
 
-				unsigned short Offset = StopReadingIndex - StartReadingIndex + 1;
+			_HandlePhysicalSpace(Length() + Offset, true);
 
-				_HandlePhysicalSpace(Length() + Offset, true);
+			_LogicalEnd = _Write(StartWritting + Offset, StartWritting, _LogicalEnd, _Right);
 
-				_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
+			_Write(StartWritting, StartReading, StopReading, _Left);
 
-				_Write(_Begin + StartWrittingIndex, Source + StartReadingIndex, Source + StopReadingIndex, _Left);
-			}
 		}
+	}
+
+	void _Delete(char* StartDelete, char* StopDelete)
+	{
+		StopDelete = (char*) _HandleAddressWithinRange(_Begin, _LogicalEnd - 1, StopDelete);
+
+		if (StartDelete <= StopDelete)
+		{
+			_LogicalEnd = _Write(StartDelete, StopDelete + 1, _LogicalEnd, _Left);
+		}
+
+	}
+
+	char _at(const char* Address) const
+	{
+
+		return (Address >= _Begin && Address < _LogicalEnd) ? *(Address) : '\0';
+
 	}
 
 	void _Swap2Address(const char** Address1, const char** Address2) const
@@ -206,6 +224,16 @@ protected:
 	unsigned short _HandleEndIndex(const char* Begin, const char* End, unsigned short EndIndex) const
 	{
 		return (EndIndex > End - Begin) ? End - Begin: EndIndex; 
+	}
+
+	bool _IsAddressWithinRange(const char* Begin, const char* End, const char* Address) const 
+	{
+		return Address >= Begin && Address <= End;
+	}
+
+	const char* _HandleAddressWithinRange(const char* Begin, const char* End, const char* Address) const
+	{
+		return _IsAddressWithinRange(Begin, End, Address) ? Address : End;
 	}
 
 	char* _SearchNecklaceFromLeft(const char* CofferBegin, const char* CofferEnd, const char* NecklaceBegin
@@ -489,102 +517,49 @@ public:
 		_Append(Source._Begin, Source._LogicalEnd);
 	}
 
-	void Insert(const unsigned short & StartWrittingIndex, const char Source[], const unsigned short& StartReadingIndex, 
-		const unsigned short& StopReadingIndex)
+	void Insert(unsigned short StartWrittingIndex, const char Source[], unsigned short StartReadingIndex, 
+		unsigned short StopReadingIndex)
 	{
-		if (StartWrittingIndex < Length() - 1)
-		{
-			const char* SourceLogicalEnd = _GetLogicalEnd(Source);
-
-			if (StartReadingIndex < _Length(Source, SourceLogicalEnd) - 1)
-			{
-				_HandleEndIndex(Source, SourceLogicalEnd - 1, StopReadingIndex);
-
-				unsigned short Offset = StopReadingIndex - StartReadingIndex + 1;
-
-				_HandlePhysicalSpace(Length() + Offset, true);
-
-				_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
-
-				_Write(_Begin + StartWrittingIndex, Source + StartReadingIndex, Source + StopReadingIndex, _Left);
-			}
-		}
+		_Insert(_Begin + StartWrittingIndex, Source, _GetLogicalEnd(Source), Source + StartReadingIndex, Source + StopReadingIndex);
 	}
 
-	void Insert(const unsigned short& StartWrittingIndex, const char Source[])
+	void Insert(unsigned short StartWrittingIndex, const char Source[])
 	{		
-	
-		if (StartWrittingIndex < Length() - 1)
-		{
-			const char* SourceLogicalEnd = _GetLogicalEnd(Source);
+		
+		const char* SourceLogicalEnd = _GetLogicalEnd(Source);
 
-			unsigned short Offset = _Length(Source, SourceLogicalEnd) - 1;
-
-			_HandlePhysicalSpace(Length() + Offset, true);
-
-			_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
-
-			_Write(_Begin + StartWrittingIndex, Source, SourceLogicalEnd - 1, _Left);
-		}
+		_Insert(_Begin + StartWrittingIndex, Source, SourceLogicalEnd, Source, SourceLogicalEnd - 1);
 	}
 
-	void Insert(const unsigned short& StartWrittingIndex, const StringKernel& Source, const unsigned short& StartReadingIndex,
-		const unsigned short& StopReadingIndex)
+	void Insert(unsigned short StartWrittingIndex, const StringKernel& Source, unsigned short StartReadingIndex,
+		unsigned short StopReadingIndex)
 	{
-		if (StartReadingIndex < Source.Length() - 1 || StartWrittingIndex < Length() - 1)
-		{
-			_HandleEndIndex(Source._Begin, Source._LogicalEnd - 1, StopReadingIndex);
-
-			unsigned short Offset = StopReadingIndex - StartReadingIndex + 1;
-
-			_HandlePhysicalSpace(Length() + Offset, true);
-
-			_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
-
-			_Write(_Begin + StartWrittingIndex, Source._Begin + StartReadingIndex, Source._Begin + StopReadingIndex, _Left);
-		}
+		_Insert(_Begin + StartWrittingIndex, Source._Begin, Source._LogicalEnd, Source._Begin + StartReadingIndex
+			, Source._Begin + StopReadingIndex);
 			
 	}
 
-	void Insert(const unsigned short& StartWrittingIndex, const StringKernel& Source)
+	void Insert(unsigned short StartWrittingIndex, const StringKernel& Source)
 	{
-		if (StartWrittingIndex < Length() - 1)
-		{
-
-			unsigned short Offset = Source.Length() - 1;
-
-			_HandlePhysicalSpace(Length() + Offset, true);
-
-			_LogicalEnd = _Write(_Begin + StartWrittingIndex + Offset, _Begin + StartWrittingIndex, _LogicalEnd, _Right);
-
-			_Write(_Begin + StartWrittingIndex, Source._Begin, Source._LogicalEnd - 1, _Left);
-		}
+		_Insert(_Begin + StartWrittingIndex, Source._Begin, Source._LogicalEnd, Source._Begin, Source._LogicalEnd - 1);
 	}
 
-	void Delete(const unsigned short& StartDeleteIndex, const unsigned short& EndDeleteIndex)
+	void Delete(unsigned short StartDeleteIndex, unsigned short StopDeleteIndex)
 	{
-		_LogicalEnd = _Write(_Begin + StartDeleteIndex, _Begin + EndDeleteIndex + 1, _LogicalEnd, _Left);
-
-	}
-
-	void Preppend(const char Source[], const unsigned short& SourceLength)
-	{
-		_HandlePhysicalSpace(Length() + SourceLength - 1, true);
-
-		_LogicalEnd = _Write(_Begin + SourceLength - 1, _Begin, _LogicalEnd, _Right);
-
-		_Write(_Begin, Source, _GetLogicalEnd(Source, SourceLength - 1), _Left);
+		_Delete(_Begin + StartDeleteIndex, _Begin + StopDeleteIndex);
 
 	}
 
 	void Preppend(const char Source[])
 	{
-		Preppend(Source, _Length(Source, _GetLogicalEnd(Source)));
+		const char* SourceLogicalEnd = _GetLogicalEnd(Source);
+
+		_Insert(_Begin, Source, SourceLogicalEnd, Source, SourceLogicalEnd - 1);
 	}
 
 	void Preppend(const StringKernel& Source)
 	{
-		Preppend(Source._Begin, Source.Length());
+		_Insert(_Begin, Source._Begin, Source._LogicalEnd, Source._Begin, Source._LogicalEnd - 1);
 	}
 
 	void Swap(StringKernel& Data2)
@@ -595,11 +570,9 @@ public:
 
 	}
 
-	char at(const unsigned short& Index) const
+	char at(unsigned short Index) const
 	{
-		char* AtAddress = _Begin + Index;
-
-		return (AtAddress < _LogicalEnd) ? *(AtAddress) : *(_LogicalEnd - 1);
+		return _at(_Begin + Index);
 	}
 
 	void PushBack(const char& NewCharacter)

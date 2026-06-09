@@ -4,20 +4,19 @@
 
 using namespace std;
 
-unsigned short _GetNewCapacity(unsigned short NewLength) 
-{
-
-	return (NewLength + 15) & ~15;
-}
 
 int main()
 {
 
-	cout << _GetNewCapacity(0);
+	StringKernel Abdou("Abdelatif SALEM CHERIF"), Maria("Maria RAHAB");
 
-	
+	cout << "Abdou : " << Abdou.Value() << endl;
+	cout << "Maria : " << Maria.Value() << endl;
 
-	
+	Abdou.Swap(Maria);
 
+	cout << "Abdou : " << Abdou.Value() << endl;
+	cout << "Maria : " << Maria.Value() << endl;
 
+	return 0;
 }

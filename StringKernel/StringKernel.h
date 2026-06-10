@@ -80,20 +80,20 @@ private:
 		return NewLength <= _Capacity(Bounds);
 	}
 
-	void _GetNewPhysicalEnd(_stBounds& Bounds, unsigned short Capacity) const
+	char* _GetNewPhysicalEnd(char* Start, unsigned short Capacity) const
 	{
-		Bounds._PhysicalEnd = Bounds._LogicalRange._Start + Capacity - 1;
+		return Start + Capacity - 1;
 	}
 
 	enum _enStartFrom { _Left, _Right };
 
-	void _Write(_stRange& WritingRange, const _stRange& ReadingRange, _enStartFrom StartWritingFrom) const
+	char* _Write(char* StartWrite, const _stRange& ReadingRange, _enStartFrom StartWriteFrom) const
 	{
-		WritingRange._Stop = WritingRange._Start + _Length(ReadingRange) - 1;
+		char* StropWrite = StartWrite + _Length(ReadingRange) - 1;
 
-		if (StartWritingFrom == _Left)
+		if (StartWriteFrom == _Left)
 		{
-			char* Writer = WritingRange._Start, * Reader = ReadingRange._Start;
+			char* Writer = StartWrite, * Reader = ReadingRange._Start;
 
 			while (Reader <= ReadingRange._Stop)
 			{
@@ -102,7 +102,7 @@ private:
 		}
 		else
 		{
-			char* Writer = WritingRange._Stop, * Reader = ReadingRange._Stop;
+			char* Writer = StropWrite , * Reader = ReadingRange._Stop;
 
 			while (Reader >= ReadingRange._Start)
 			{
@@ -110,9 +110,64 @@ private:
 			}
 		}
 
+		return StropWrite;
 	}
 
-	void _Resize(_stBounds& Bounds, unsigned short NewLogicalRangeLength, bool DoSaveData) const
+	_stRange _Assignement(_stRange WritingRange, const _stRange& ReadingRange) const
+	{
+
+		WritingRange._Stop = _Write(WritingRange._Start, ReadingRange, _Left);
+
+		return WritingRange;
+	}
+
+	_stRange _Concatenate(_stRange WritingRange, const _stRange& ReadingRange1, const _stRange& ReadingRange2) const
+	{
+
+		WritingRange._Stop = _Write(_Write(WritingRange._Start, ReadingRange1, _Left) + 1, ReadingRange2, _Left);
+
+		return WritingRange;
+	}
+
+	_stRange _Append(_stRange WritingRange, const _stRange& ReadingRange) const
+	{
+
+		WritingRange._Stop = _Write(WritingRange._Stop + 1, ReadingRange, _Left);
+
+		return WritingRange;
+	}
+
+	_stRange _Preppend(_stRange WritingRange, const _stRange& ReadingRange) const
+	{
+
+		WritingRange._Stop = _Write(WritingRange._Start + _Length(ReadingRange), WritingRange, _Right);
+
+		_Write(WritingRange._Start, ReadingRange, _Left);
+
+		return WritingRange;
+
+	}
+
+	_stRange _Insert(_stRange WritingRange, char* StartWrite, const _stRange& ReadingRange) const
+	{
+
+		char* StopWrite = StartWrite + _Length(ReadingRange) - 1;
+
+		WritingRange._Stop = _Write(StopWrite + 1, WritingRange, _Right);
+
+		_Write(StartWrite, ReadingRange, _Right);
+
+		return WritingRange;
+	}
+
+	_stRange _Delete(_stRange WritingRange, const _stRange& DeletingRange) const
+	{
+		WritingRange._Stop = _Write(DeletingRange._Start, _RangeAssignement(DeletingRange._Stop + 1, WritingRange._Stop), _Left);
+
+		return WritingRange;
+	}
+
+	void _Reallocate(_stBounds& Bounds, unsigned short NewLogicalRangeLength, bool DoSaveData) const
 	{
 
 		if (!_HaveMoreSpace(Bounds, NewLogicalRangeLength))
@@ -123,12 +178,12 @@ private:
 
 			Bounds._LogicalRange._Start = new char[Capacity];
 
-			_GetNewPhysicalEnd(Bounds, Capacity);
+			Bounds._PhysicalEnd = _GetNewPhysicalEnd(Bounds._LogicalRange._Start, Capacity);
 
 			if (DoSaveData)
 			{
 
-				_Write(Bounds._LogicalRange, LastLogicalRange, _Left);
+				Bounds._LogicalRange._Stop = _Write(Bounds._LogicalRange._Start, LastLogicalRange, _Left);
 
 			}
 			else
@@ -142,69 +197,6 @@ private:
 		{
 			_Clear(Bounds._LogicalRange);
 		}
-	}
-
-	void _Assignement(_stBounds& DestinationBounds, const _stRange& SourceRange) const
-	{
-
-		_Resize(DestinationBounds, _Length(SourceRange), false);
-
-		_Write(DestinationBounds._LogicalRange, SourceRange, _Left);
-
-
-	}
-
-	void _Concatenate(_stBounds& DestinationBounds, const _stRange& Source1Range, const _stRange& Source2Range) const
-	{
-		
-		_Resize(DestinationBounds, _Length(Source1Range) + _Length(Source2Range) - 1, false);
-
-		_stRange DestinationLogicalRange = DestinationBounds._LogicalRange;
-
-		_Write(DestinationLogicalRange, _RangeAssignement(Source1Range._Start, Source1Range._Stop - 1), _Left);
-
-		_Write(_LogicalEnd + 1, Source2Begin, Source2LogicalEnd, _Left);
-	}
-
-	void _Append(const char* SourceBegin, const char* SourceLogicalEnd)
-	{
-
-		_Resize(Length() + _Length(SourceBegin, SourceLogicalEnd) - 1, true);
-
-		_LogicalEnd = _Write(_LogicalEnd, SourceBegin, SourceLogicalEnd, _Left);
-
-	}
-
-	void _Insert(char* StartWritting, const char* SourceBegin, const char* SourceLogicalEnd, const char* StartReading
-		, const char* StopReading)
-	{
-
-		StopReading = _HandleAddressWithinRange(SourceBegin, SourceLogicalEnd - 1, StopReading);
-
-		if (StartReading <= StopReading)
-		{
-			StartWritting = (char*)_HandleAddressWithinRange(_Begin, _LogicalEnd, StartWritting);
-
-			unsigned short Offset = StopReading - StartReading + 1;
-
-			_Resize(Length() + Offset, true);
-
-			_LogicalEnd = _Write(StartWritting + Offset, StartWritting, _LogicalEnd, _Right);
-
-			_Write(StartWritting, StartReading, StopReading, _Left);
-
-		}
-	}
-
-	void _Delete(char* StartDelete, char* StopDelete)
-	{
-		StopDelete = (char*)_HandleAddressWithinRange(_Begin, _LogicalEnd - 1, StopDelete);
-
-		if (StartDelete <= StopDelete)
-		{
-			_LogicalEnd = _Write(StartDelete, StopDelete + 1, _LogicalEnd, _Left);
-		}
-
 	}
 
 protected:
@@ -257,16 +249,16 @@ protected:
 		*_LogicalEnd = '\0';
 	}
 
-	void _Resize(unsigned short NewLength, bool DoSaveData)
+	void _Reallocate(unsigned short NewLength, bool DoSaveData)
 	{
-		_Resize(_Begin, _LogicalEnd, _PhysicalEnd, NewLength, DoSaveData);
+		_Reallocate(_Begin, _LogicalEnd, _PhysicalEnd, NewLength, DoSaveData);
 
 	}
 
 	void _Assignement(const char* SourceBegin, const char* SourceLogicalEnd)
 	{
 
-		_Resize(_Length(SourceBegin, SourceLogicalEnd), false);
+		_Reallocate(_Length(SourceBegin, SourceLogicalEnd), false);
 
 		_LogicalEnd = _Write(_Begin, SourceBegin, SourceLogicalEnd, _Left);
 	}
@@ -274,7 +266,7 @@ protected:
 	void _Concatenate(const char* Source1Begin, const char* Source1LogicalEnd, const char* Source2Begin, const char* Source2LogicalEnd)
 	{
 
-		_Resize(_Length(Source1Begin, Source1LogicalEnd) + _Length(Source2Begin, Source2LogicalEnd) - 1, false);
+		_Reallocate(_Length(Source1Begin, Source1LogicalEnd) + _Length(Source2Begin, Source2LogicalEnd) - 1, false);
 
 		if (Source1LogicalEnd > Source1Begin)
 		{
@@ -291,7 +283,7 @@ protected:
 	void _Append(const char* SourceBegin, const char* SourceLogicalEnd)
 	{
 
-		_Resize(Length() + _Length(SourceBegin, SourceLogicalEnd) - 1, true);
+		_Reallocate(Length() + _Length(SourceBegin, SourceLogicalEnd) - 1, true);
 
 		_LogicalEnd = _Write(_LogicalEnd, SourceBegin, SourceLogicalEnd, _Left);
 
@@ -309,7 +301,7 @@ protected:
 
 			unsigned short Offset = StopReading - StartReading + 1;
 
-			_Resize(Length() + Offset, true);
+			_Reallocate(Length() + Offset, true);
 
 			_LogicalEnd = _Write(StartWritting + Offset, StartWritting, _LogicalEnd, _Right);
 
@@ -730,7 +722,7 @@ public:
 
 	void PushBack(const char& NewCharacter)
 	{
-		_Resize(Length() + 1, true);
+		_Reallocate(Length() + 1, true);
 
 		*_LogicalEnd++ = NewCharacter;
 

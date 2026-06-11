@@ -4,218 +4,320 @@
 
 using namespace std;
 
+
 class StringKernel
 {
 private:
-
-	struct _stRange
+	
+	class _clsRange
 	{
-		char* _Start;
-		char* _Stop;
+	public:
+
+		char* Begin;
+		char* End;
+
+		_clsRange(char* Begin_, char* End_)
+		{
+			Begin = Begin_;
+			End = End_;
+		}
+
+		static _clsRange NewRange(char* Begin_, char* End_)
+		{
+			_clsRange Range(Begin_, End_);
+
+			return Range;
+		}
+
+		_clsRange HandleRangeToBeInside(_clsRange Range) const
+		{
+			if (Range.Begin < Begin)
+			{
+				Range.Begin = Begin;
+			}
+
+			if (Range.End > End)
+			{
+				Range.End = End;
+			}
+
+			return Range;
+		}
+
+		enum enStartFrom { Left, Right };
+
+		char* Write(char* StartWrite, const _clsRange& ReadingRange, enStartFrom StartWriteFrom) const
+		{
+			char* StropWrite = StartWrite + ReadingRange.Length() - 1;
+
+			if (StartWriteFrom == Left)
+			{
+				char* Writer = StartWrite, * Reader = ReadingRange.Begin;
+
+				while (Reader <= ReadingRange.End)
+				{
+					*Writer++ = *Reader++;
+				}
+			}
+			else
+			{
+				char* Writer = StropWrite, * Reader = ReadingRange.End;
+
+				while (Reader >= ReadingRange.Begin)
+				{
+					*Writer-- = *Reader--;
+				}
+			}
+
+			return StropWrite;
+		}
+
+		void AddStopCharacter() const
+		{
+			*End = '\0';
+		}
+
+		void Clear()
+		{
+			End = Begin;
+
+			AddStopCharacter();
+		}
+
+		char at(const char* At) const
+		{
+
+			return (At >= Begin && At < End) ? *(At) : '\0';
+
+		}
+
+		unsigned short Size() const
+		{
+			return End - Begin;
+		}
+
+		unsigned short Length() const
+		{
+			return End - Begin + 1;
+		}
+
+		void Assignement(const _clsRange& New)
+		{
+
+			End = Write(Begin, New, Left);
+
+		}
+
+		void Concatenate(const _clsRange& New1, const _clsRange& New2)
+		{
+
+			End = Write(Write(Begin, New1, Left) + 1, New2, Left);
+
+		}
+
+		void Append(const _clsRange& New)
+		{
+
+			End = Write(End + 1, New, Left);
+
+		}
+
+		void Preppend(const _clsRange& New)
+		{
+
+			End = Write(Begin + New.Length(), *this, Right);
+
+			Write(Begin, New, Left);
+
+		}
+
+		void Insert(char* StartWrite, const _clsRange& New)
+		{
+
+			char* StopWrite = StartWrite + New.Length() - 1;
+
+			End = Write(StopWrite + 1, *this, Right);
+
+			Write(StartWrite, New, Right);
+
+		}
+
+		void Delete(const _clsRange& DeleteRange)
+		{
+
+			End = Write(DeleteRange.Begin, NewRange(DeleteRange.End + 1, End), Left);
+
+		}
+
+		char* SearchNecklace(const _clsRange& Necklace, enStartFrom StratSearchFrom) const
+		{
+
+			if (StratSearchFrom == Left)
+			{
+				char* CofferReader = Begin, * NecklaceReader = Necklace.Begin;
+
+				while (CofferReader <= End)
+				{
+					if (*CofferReader == *NecklaceReader)
+					{
+
+						if (NecklaceReader == Necklace.End)
+						{
+							return CofferReader - (Necklace.End - Necklace.Begin);
+						}
+						else
+						{
+							NecklaceReader++;
+						}
+					}
+					else if (NecklaceReader > Necklace.Begin)
+					{
+						CofferReader -= NecklaceReader - Necklace.Begin;
+
+						NecklaceReader = Necklace.Begin;
+
+					}
+
+					CofferReader++;
+
+				}
+			}
+			else
+			{
+				char* CofferReader = End, * NecklaceReader = Necklace.End;
+
+				while (CofferReader >= Begin)
+				{
+					if (*CofferReader == *NecklaceReader)
+					{
+
+						if (NecklaceReader == Necklace.Begin)
+						{
+							return CofferReader;
+						}
+						else
+						{
+							NecklaceReader--;
+						}
+					}
+					else if (NecklaceReader < Necklace.End)
+					{
+						CofferReader += Necklace.End - NecklaceReader;
+
+						NecklaceReader = Necklace.End;
+
+					}
+
+					CofferReader--;
+				}
+			}
+
+			return nullptr;
+		}
+
+		char* SearchGem(const _clsRange& Gems, enStartFrom StartSearchFrom) const
+		{
+
+			if (StartSearchFrom == Left)
+			{
+				for (char* CofferReader = Begin; CofferReader <= End; CofferReader++)
+				{
+					for (char* GemsReader = Gems.Begin; GemsReader <= Gems.End; GemsReader++)
+					{
+						if (*CofferReader == *GemsReader)
+						{
+							return CofferReader;
+						}
+					}
+				}
+			}
+			else
+			{
+				for (char* CofferReader = End; CofferReader >= Begin; CofferReader--)
+				{
+					for (char* GemsReader = Gems.End; GemsReader >= Gems.Begin; GemsReader--)
+					{
+						if (*CofferReader == *GemsReader)
+						{
+							return CofferReader;
+						}
+					}
+				}
+			}
+
+			return nullptr;
+		}
+
+		char* SearchPebble(const _clsRange& Gems, enStartFrom StartSearchFrom) const
+		{
+			
+			if (StartSearchFrom == Left)
+			{
+				for (char* CofferReader = Begin; CofferReader <= End; CofferReader++)
+				{
+					if (Gems.SearchGem(NewRange(CofferReader, CofferReader), Left) == nullptr)
+					{
+						return CofferReader;
+					}
+
+				}
+			}
+			else
+			{
+				for (char* CofferReader = End; CofferReader >= Begin; CofferReader--)
+				{
+					if (Gems.SearchGem(NewRange(CofferReader, CofferReader), Left) == nullptr)
+					{
+						return CofferReader;
+					}
+				}
+			}
+
+			return nullptr;
+		}
+
+
 	};
 
-	struct _stBounds
-	{
-		_stRange _LogicalRange;
-		char* _PhysicalEnd;
-	};
+	_clsRange _LogicalRange;
 
-	_stBounds _Bounds;
-
-	_stRange _RangeAssignement(char* Start, char* Stop) const
-	{
-		_stRange Range;
-
-		Range._Start = Start;
-		Range._Stop = Stop;
-
-		return Range;
-	}
-
-	_stBounds _BoundsAssignement(const _stRange& LogicalRange, char* PhysicalEnd) const
-	{
-		_stBounds Bounds;
-
-		Bounds._LogicalRange = LogicalRange;
-		Bounds._PhysicalEnd = PhysicalEnd;
-
-		return Bounds;
-	}
-
-	void _AddStopCharacter(_stRange& Range) const
-	{
-		*Range._Stop = '\0';
-	}
-
-	void _Clear(_stRange& Range) const
-	{
-		Range._Stop = Range._Start;
-
-		_AddStopCharacter(Range);
-	}
-
-	unsigned short _Size(const _stRange& Range) const
-	{
-		return Range._Stop - Range._Start;
-	}
-
-	unsigned short _Length(const _stRange& Range) const
-	{
-		return Range._Stop - Range._Start + 1;
-	}
-
-	unsigned short _Capacity(const _stBounds& Bounds) const
-	{
-		return Bounds._PhysicalEnd - Bounds._LogicalRange._Start + 1;
-	}
-
+	char* _PhysicalEnd;
+	
 	unsigned short _GetNewCapacity(const unsigned short& NewLength) const
 	{
 
 		return (NewLength + 15) & ~15;
 	}
 
-	bool _HaveMoreSpace(const _stBounds& Bounds, unsigned short NewLength) const
+	bool _HaveMoreSpace(unsigned short NewLength) const
 	{
-		return NewLength <= _Capacity(Bounds);
+		return NewLength <= _Capacity(clsBounds);
 	}
 
 	char* _GetNewPhysicalEnd(char* Start, unsigned short Capacity) const
 	{
 		return Start + Capacity - 1;
 	}
-
-	enum _enStartFrom { _Left, _Right };
-
-	char* _Write(char* StartWrite, const _stRange& ReadingRange, _enStartFrom StartWriteFrom) const
-	{
-		char* StropWrite = StartWrite + _Length(ReadingRange) - 1;
-
-		if (StartWriteFrom == _Left)
-		{
-			char* Writer = StartWrite, * Reader = ReadingRange._Start;
-
-			while (Reader <= ReadingRange._Stop)
-			{
-				*Writer++ = *Reader++;
-			}
-		}
-		else
-		{
-			char* Writer = StropWrite , * Reader = ReadingRange._Stop;
-
-			while (Reader >= ReadingRange._Start)
-			{
-				*Writer-- = *Reader--;
-			}
-		}
-
-		return StropWrite;
-	}
-
-	_stRange _Assignement(_stRange WritingRange, const _stRange& ReadingRange) const
-	{
-
-		WritingRange._Stop = _Write(WritingRange._Start, ReadingRange, _Left);
-
-		return WritingRange;
-	}
-
-	_stRange _Concatenate(_stRange WritingRange, const _stRange& ReadingRange1, const _stRange& ReadingRange2) const
-	{
-
-		WritingRange._Stop = _Write(_Write(WritingRange._Start, ReadingRange1, _Left) + 1, ReadingRange2, _Left);
-
-		return WritingRange;
-	}
-
-	_stRange _Append(_stRange WritingRange, const _stRange& ReadingRange) const
-	{
-
-		WritingRange._Stop = _Write(WritingRange._Stop + 1, ReadingRange, _Left);
-
-		return WritingRange;
-	}
-
-	_stRange _Preppend(_stRange WritingRange, const _stRange& ReadingRange) const
-	{
-
-		WritingRange._Stop = _Write(WritingRange._Start + _Length(ReadingRange), WritingRange, _Right);
-
-		_Write(WritingRange._Start, ReadingRange, _Left);
-
-		return WritingRange;
-
-	}
-
-	_stRange _Insert(_stRange WritingRange, char* StartWrite, const _stRange& ReadingRange) const
-	{
-
-		char* StopWrite = StartWrite + _Length(ReadingRange) - 1;
-
-		WritingRange._Stop = _Write(StopWrite + 1, WritingRange, _Right);
-
-		_Write(StartWrite, ReadingRange, _Right);
-
-		return WritingRange;
-	}
-
-	_stRange _Delete(_stRange WritingRange, const _stRange& DeletingRange) const
-	{
-		WritingRange._Stop = _Write(DeletingRange._Start, _RangeAssignement(DeletingRange._Stop + 1, WritingRange._Stop), _Left);
-
-		return WritingRange;
-	}
-
-	void _Reallocate(_stBounds& Bounds, unsigned short NewLogicalRangeLength, bool DoSaveData) const
-	{
-
-		if (!_HaveMoreSpace(Bounds, NewLogicalRangeLength))
-		{
-			_stRange LastLogicalRange = Bounds._LogicalRange;
-
-			unsigned short Capacity = _GetNewCapacity(NewLogicalRangeLength);
-
-			Bounds._LogicalRange._Start = new char[Capacity];
-
-			Bounds._PhysicalEnd = _GetNewPhysicalEnd(Bounds._LogicalRange._Start, Capacity);
-
-			if (DoSaveData)
-			{
-
-				Bounds._LogicalRange._Stop = _Write(Bounds._LogicalRange._Start, LastLogicalRange, _Left);
-
-			}
-			else
-			{
-				_Clear(Bounds._LogicalRange);
-			}
-
-			delete[] LastLogicalRange._Start;
-		}
-		else if (!DoSaveData)
-		{
-			_Clear(Bounds._LogicalRange);
-		}
-	}
-
 protected:
 
-	
-
-	char* _GetBegin()
+	char* _GetBegin() const
 	{
-		return _Begin;
+		return _LogicalRange.Begin;
 	}
 
-	char* _GetLogicalEnd()
+	char* _GetLogicalEnd() const
 	{
-		return _LogicalEnd;
+		return _LogicalRange.End;
 	}
 
-	char* _GetPhysicalEnd()
+	char* _GetPhysicalEnd() const
 	{
 		return _PhysicalEnd;
+	}
+
+	_clsRange GetLogicalRange() const
+	{
+		return _LogicalRange;
 	}
 
 	const char* _GetLogicalEnd(const char Data[]) const
@@ -233,26 +335,41 @@ protected:
 		return Data + Length - 1;
 	}
 
-	unsigned short _Size(const _stRange& Range) const
+	unsigned short _Capacity(const clsBounds& clsBounds) const
 	{
-
-		return (Range._Start < Range._Stop) ? _Size(Range._Start, Range._Stop) : _Size(Range._Stop, Range._Start);
+		return clsBounds._PhysicalEnd - clsBounds._LogicalRange.Begin + 1;
 	}
 
-	unsigned short _Length(const _stRange& Range) const
+	void _Reallocate(clsBounds& clsBounds, unsigned short NewLogicalRangeLength, bool DoSaveData) const
 	{
-		return (Range._Start < Range._Stop) ? _Length(Range._Start, Range._Stop) : _Length(Range._Stop, Range._Start);
-	}
 
-	void _AddStopCharacter()
-	{
-		*_LogicalEnd = '\0';
-	}
+		if (!_HaveMoreSpace(clsBounds, NewLogicalRangeLength))
+		{
+			_clsRange LastLogicalRange = clsBounds._LogicalRange;
 
-	void _Reallocate(unsigned short NewLength, bool DoSaveData)
-	{
-		_Reallocate(_Begin, _LogicalEnd, _PhysicalEnd, NewLength, DoSaveData);
+			unsigned short Capacity = _GetNewCapacity(NewLogicalRangeLength);
 
+			clsBounds._LogicalRange.Begin = new char[Capacity];
+
+			clsBounds._PhysicalEnd = _GetNewPhysicalEnd(clsBounds._LogicalRange.Begin, Capacity);
+
+			if (DoSaveData)
+			{
+
+				clsBounds._LogicalRange.End = Write(clsBounds._LogicalRange.Begin, LastLogicalRange, Left);
+
+			}
+			else
+			{
+				_Clear(clsBounds._LogicalRange);
+			}
+
+			delete[] LastLogicalRange.Begin;
+		}
+		else if (!DoSaveData)
+		{
+			_Clear(clsBounds._LogicalRange);
+		}
 	}
 
 	void _Assignement(const char* SourceBegin, const char* SourceLogicalEnd)
@@ -260,7 +377,7 @@ protected:
 
 		_Reallocate(_Length(SourceBegin, SourceLogicalEnd), false);
 
-		_LogicalEnd = _Write(_Begin, SourceBegin, SourceLogicalEnd, _Left);
+		_LogicalEnd = Write(Begin, SourceBegin, SourceLogicalEnd, Left);
 	}
 
 	void _Concatenate(const char* Source1Begin, const char* Source1LogicalEnd, const char* Source2Begin, const char* Source2LogicalEnd)
@@ -270,14 +387,14 @@ protected:
 
 		if (Source1LogicalEnd > Source1Begin)
 		{
-			_LogicalEnd = _Write(_Begin, Source1Begin, Source1LogicalEnd - 1, _Left);
+			_LogicalEnd = Write(Begin, Source1Begin, Source1LogicalEnd - 1, Left);
 		}
 		else
 		{
-			_LogicalEnd = _Begin;
+			_LogicalEnd = Begin;
 		}
 
-		_LogicalEnd = _Write(_LogicalEnd + 1, Source2Begin, Source2LogicalEnd, _Left);
+		_LogicalEnd = Write(_LogicalEnd + 1, Source2Begin, Source2LogicalEnd, Left);
 	}
 
 	void _Append(const char* SourceBegin, const char* SourceLogicalEnd)
@@ -285,7 +402,7 @@ protected:
 
 		_Reallocate(Length() + _Length(SourceBegin, SourceLogicalEnd) - 1, true);
 
-		_LogicalEnd = _Write(_LogicalEnd, SourceBegin, SourceLogicalEnd, _Left);
+		_LogicalEnd = Write(_LogicalEnd, SourceBegin, SourceLogicalEnd, Left);
 
 	}
 
@@ -297,34 +414,27 @@ protected:
 
 		if (StartReading <= StopReading)
 		{
-			StartWritting = (char*)_HandleAddressWithinRange(_Begin, _LogicalEnd, StartWritting);
+			StartWritting = (char*)_HandleAddressWithinRange(Begin, _LogicalEnd, StartWritting);
 
 			unsigned short Offset = StopReading - StartReading + 1;
 
 			_Reallocate(Length() + Offset, true);
 
-			_LogicalEnd = _Write(StartWritting + Offset, StartWritting, _LogicalEnd, _Right);
+			_LogicalEnd = Write(StartWritting + Offset, StartWritting, _LogicalEnd, Right);
 
-			_Write(StartWritting, StartReading, StopReading, _Left);
+			Write(StartWritting, StartReading, StopReading, Left);
 
 		}
 	}
 
 	void _Delete(char* StartDelete, char* StopDelete)
 	{
-		StopDelete = (char*) _HandleAddressWithinRange(_Begin, _LogicalEnd - 1, StopDelete);
+		StopDelete = (char*) _HandleAddressWithinRange(Begin, _LogicalEnd - 1, StopDelete);
 
 		if (StartDelete <= StopDelete)
 		{
-			_LogicalEnd = _Write(StartDelete, StopDelete + 1, _LogicalEnd, _Left);
+			_LogicalEnd = Write(StartDelete, StopDelete + 1, _LogicalEnd, Left);
 		}
-
-	}
-
-	char _at(const char* Address) const
-	{
-
-		return (Address >= _Begin && Address < _LogicalEnd) ? *(Address) : '\0';
 
 	}
 
@@ -391,7 +501,7 @@ protected:
 		const char* NecklaceLogicalEnd, const char* StartReadingNecklace, const char* StopReadingNecklace) const
 	{
 
-		StopReadingCoffer = _HandleAddressWithinRange(_Begin, _LogicalEnd - 1, StopReadingCoffer);
+		StopReadingCoffer = _HandleAddressWithinRange(Begin, _LogicalEnd - 1, StopReadingCoffer);
 
 		StopReadingNecklace = _HandleAddressWithinRange(NecklaceBegin, NecklaceLogicalEnd - 1, StopReadingNecklace);
 
@@ -443,7 +553,7 @@ protected:
 		const char* NecklaceLogicalEnd, const char* StartReadingNecklace, const char* StopReadingNecklace) const
 	{
 
-		StopReadingCoffer = _HandleAddressWithinRange(_Begin, _LogicalEnd - 1, StopReadingCoffer);
+		StopReadingCoffer = _HandleAddressWithinRange(Begin, _LogicalEnd - 1, StopReadingCoffer);
 
 		StopReadingNecklace = _HandleAddressWithinRange(NecklaceBegin, NecklaceLogicalEnd - 1, StopReadingNecklace);
 
@@ -484,7 +594,7 @@ protected:
 		, const char* GemsLogicalEnd, const char* StartReadingGems, const char* StopReadingGems) const
 	{
 
-		StopReadingCoffer = _HandleAddressWithinRange(_Begin, _LogicalEnd - 1, StopReadingCoffer);
+		StopReadingCoffer = _HandleAddressWithinRange(Begin, _LogicalEnd - 1, StopReadingCoffer);
 
 		StopReadingGems = _HandleAddressWithinRange(GemsBegin, GemsLogicalEnd - 1, StopReadingGems);
 
@@ -518,7 +628,7 @@ protected:
 	char* _SearchPebbleFromLeft(const char* StartReadingCoffer, const char* StopReadingCoffer, const char* GemsBegin
 		, const char* GemsLogicalEnd, const char* StartReadingGems, const char* StopReadingGems) const
 	{
-		StopReadingCoffer = _HandleAddressWithinRange(_Begin, _LogicalEnd - 1, StopReadingCoffer);
+		StopReadingCoffer = _HandleAddressWithinRange(Begin, _LogicalEnd - 1, StopReadingCoffer);
 
 		StopReadingGems = _HandleAddressWithinRange(GemsBegin, GemsLogicalEnd - 1, StopReadingGems);
 
@@ -558,7 +668,7 @@ protected:
 	char* _SearchGemFromRight(const char* StartReadingCoffer, const char* StopReadingCoffer, const char* GemsBegin,
 		const char* GemsLogicalEnd, const char* StartReadingGems, const char* StopReadingGems) const
 	{
-		StopReadingCoffer = _HandleAddressWithinRange(_Begin, _LogicalEnd - 1, StopReadingCoffer);
+		StopReadingCoffer = _HandleAddressWithinRange(Begin, _LogicalEnd - 1, StopReadingCoffer);
 
 		StopReadingGems = _HandleAddressWithinRange(GemsBegin, GemsLogicalEnd - 1, StopReadingGems);
 
@@ -591,7 +701,7 @@ protected:
 	char* _SearchPebbleFromRight(const char* StartReadingCoffer, const char* StopReadingCoffer, const char* GemsBegin
 		, const char* GemsLogicalEnd, const char* StartReadingGems, const char* StopReadingGems) const
 	{
-		StopReadingCoffer = _HandleAddressWithinRange(_Begin, _LogicalEnd - 1, StopReadingCoffer);
+		StopReadingCoffer = _HandleAddressWithinRange(Begin, _LogicalEnd - 1, StopReadingCoffer);
 
 		StopReadingGems = _HandleAddressWithinRange(GemsBegin, GemsLogicalEnd - 1, StopReadingGems);
 
@@ -610,7 +720,7 @@ public:
 
 	StringKernel()
 	{
-		_Begin = new char[16];
+		Begin = new char[16];
 
 		_PhysicalEnd = _GetNewPhysicalEnd(16);
 
@@ -623,11 +733,11 @@ public:
 
 		const unsigned short Capacity = _GetNewCapacity(_Length(Value, ValueLogicalEnd));
 
-		_Begin = new char[Capacity];
+		Begin = new char[Capacity];
 
 		_PhysicalEnd = _GetNewPhysicalEnd(Capacity);
 
-		_LogicalEnd = _Write(_Begin, Value, ValueLogicalEnd, _Left);
+		_LogicalEnd = Write(Begin, Value, ValueLogicalEnd, Left);
 
 	}
 
@@ -635,11 +745,11 @@ public:
 	{
 		const unsigned short Capacity = _GetNewCapacity(Value.Length());
 
-		_Begin = new char[Capacity];
+		Begin = new char[Capacity];
 
 		_PhysicalEnd = _GetNewPhysicalEnd(Capacity);
 
-		_LogicalEnd = _Write(_Begin, Value._Begin, Value._LogicalEnd, _Left);
+		_LogicalEnd = Write(Begin, Value.Begin, Value._LogicalEnd, Left);
 
 	}
 
@@ -647,25 +757,31 @@ public:
 	{
 		cout << "Hi Destructor !" << endl;
 
-		delete[] _Begin;
+		delete[] Begin;
 	}
 
 	const char* Value() const
 	{
-		return _Begin;
+		return Begin;
+	}
+
+	void Reallocate(unsigned short NewLength, bool DoSaveData)
+	{
+		_Reallocate(_Bounds, NewLength, DoSaveData);
+
 	}
 
 	void Clear()
 	{
 
-		_LogicalEnd = _Begin;
+		_LogicalEnd = Begin;
 
 		_AddStopCharacter();
 	}
 
 	bool IsEmpty() const
 	{
-		return _LogicalEnd == _Begin;
+		return _LogicalEnd == Begin;
 	}
 
 	bool IsFull() const
@@ -675,26 +791,26 @@ public:
 
 	unsigned short Size() const
 	{
-		return _Size(_Begin, _LogicalEnd);
+		return _Size(Begin, _LogicalEnd);
 	}
 
 	unsigned short Length() const
 	{
-		return _Length(_Begin, _LogicalEnd);
+		return _Length(Begin, _LogicalEnd);
 	}
 
 	unsigned short Capacity() const
 	{
-		return _PhysicalEnd - _Begin + 1;
+		return _PhysicalEnd - Begin + 1;
 	}
 
 	static bool IsSameData(const StringKernel& Data1, const StringKernel& Data2)
 	{
-		const char* Begin1 = Data1._Begin, * Begin2 = Data2._Begin;
+		const char* Begin1 = Data1.Begin, * Begin2 = Data2.Begin;
 
 		bool IsSame = Data1.Length() == Data2.Length();
 
-		while (IsSame && (Data1._Begin < Data1._LogicalEnd))
+		while (IsSame && (Data1.Begin < Data1._LogicalEnd))
 		{
 			IsSame = Begin1++ == Begin2++;
 		}
@@ -709,7 +825,7 @@ public:
 
 	void Swap(StringKernel& Data2)
 	{
-		_Swap2Address((const char**)&_Begin, (const char**)&Data2._Begin);
+		_Swap2Address((const char**)&Begin, (const char**)&Data2.Begin);
 		_Swap2Address((const char**)&_LogicalEnd, (const char**)&Data2._LogicalEnd);
 		_Swap2Address((const char**)&_PhysicalEnd, (const char**)&Data2._PhysicalEnd);
 
@@ -717,7 +833,7 @@ public:
 
 	char at(unsigned short Index) const
 	{
-		return _at(_Begin + Index);
+		return _at(Begin + Index);
 	}
 
 	void PushBack(const char& NewCharacter)
@@ -731,7 +847,7 @@ public:
 
 	void PopBack()
 	{
-		if (_LogicalEnd > _Begin)
+		if (_LogicalEnd > Begin)
 		{
 			_LogicalEnd--;
 			_AddStopCharacter();
@@ -745,7 +861,7 @@ public:
 
 	void Assignment(const StringKernel& Source)
 	{
-		_Assignement(Source._Begin, Source._LogicalEnd);
+		_Assignement(Source.Begin, Source._LogicalEnd);
 	}
 
 	void Copy(const char Source[])
@@ -755,7 +871,7 @@ public:
 
 	void Copy(const StringKernel& Source)
 	{
-		_Assignement(Source._Begin, Source._LogicalEnd);
+		_Assignement(Source.Begin, Source._LogicalEnd);
 	}
 
 	void Concatenate(const char Source1[], const char Source2[])
@@ -765,17 +881,17 @@ public:
 
 	void Concatenate(const char Source1[], const StringKernel& Source2)
 	{
-		_Concatenate(Source1, _GetLogicalEnd(Source1), Source2._Begin, Source2._LogicalEnd);
+		_Concatenate(Source1, _GetLogicalEnd(Source1), Source2.Begin, Source2._LogicalEnd);
 	}
 
 	void Concatenate(const StringKernel& Source1, const char Source2[])
 	{
-		_Concatenate(Source1._Begin, Source1._LogicalEnd, Source2, _GetLogicalEnd(Source2));
+		_Concatenate(Source1.Begin, Source1._LogicalEnd, Source2, _GetLogicalEnd(Source2));
 	}
 
 	void Concatenate(const StringKernel& Source1, const StringKernel& Source2)
 	{
-		_Concatenate(Source1._Begin, Source1._LogicalEnd, Source2._Begin, Source2._LogicalEnd);
+		_Concatenate(Source1.Begin, Source1._LogicalEnd, Source2.Begin, Source2._LogicalEnd);
 	}
 
 	void Append(const char Source[])
@@ -785,13 +901,13 @@ public:
 
 	void Append(const StringKernel& Source)
 	{
-		_Append(Source._Begin, Source._LogicalEnd);
+		_Append(Source.Begin, Source._LogicalEnd);
 	}
 
 	void Insert(unsigned short StartWrittingIndex, const char Source[], unsigned short StartReadingIndex, 
 		unsigned short StopReadingIndex)
 	{
-		_Insert(_Begin + StartWrittingIndex, Source, _GetLogicalEnd(Source), Source + StartReadingIndex, Source + StopReadingIndex);
+		_Insert(Begin + StartWrittingIndex, Source, _GetLogicalEnd(Source), Source + StartReadingIndex, Source + StopReadingIndex);
 	}
 
 	void Insert(unsigned short StartWrittingIndex, const char Source[])
@@ -799,25 +915,25 @@ public:
 		
 		const char* SourceLogicalEnd = _GetLogicalEnd(Source);
 
-		_Insert(_Begin + StartWrittingIndex, Source, SourceLogicalEnd, Source, SourceLogicalEnd - 1);
+		_Insert(Begin + StartWrittingIndex, Source, SourceLogicalEnd, Source, SourceLogicalEnd - 1);
 	}
 
 	void Insert(unsigned short StartWrittingIndex, const StringKernel& Source, unsigned short StartReadingIndex,
 		unsigned short StopReadingIndex)
 	{
-		_Insert(_Begin + StartWrittingIndex, Source._Begin, Source._LogicalEnd, Source._Begin + StartReadingIndex
-			, Source._Begin + StopReadingIndex);
+		_Insert(Begin + StartWrittingIndex, Source.Begin, Source._LogicalEnd, Source.Begin + StartReadingIndex
+			, Source.Begin + StopReadingIndex);
 			
 	}
 
 	void Insert(unsigned short StartWrittingIndex, const StringKernel& Source)
 	{
-		_Insert(_Begin + StartWrittingIndex, Source._Begin, Source._LogicalEnd, Source._Begin, Source._LogicalEnd - 1);
+		_Insert(Begin + StartWrittingIndex, Source.Begin, Source._LogicalEnd, Source.Begin, Source._LogicalEnd - 1);
 	}
 
 	void Delete(unsigned short StartDeleteIndex, unsigned short StopDeleteIndex)
 	{
-		_Delete(_Begin + StartDeleteIndex, _Begin + StopDeleteIndex);
+		_Delete(Begin + StartDeleteIndex, Begin + StopDeleteIndex);
 
 	}
 
@@ -825,22 +941,22 @@ public:
 	{
 		const char* SourceLogicalEnd = _GetLogicalEnd(Source);
 
-		_Insert(_Begin, Source, SourceLogicalEnd, Source, SourceLogicalEnd - 1);
+		_Insert(Begin, Source, SourceLogicalEnd, Source, SourceLogicalEnd - 1);
 	}
 
 	void Preppend(const StringKernel& Source)
 	{
-		_Insert(_Begin, Source._Begin, Source._LogicalEnd, Source._Begin, Source._LogicalEnd - 1);
+		_Insert(Begin, Source.Begin, Source._LogicalEnd, Source.Begin, Source._LogicalEnd - 1);
 	}
 
 	unsigned short SearchNecklaceFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Necklace[]
 		, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
 	{
 
-		char * Position = _SearchNecklaceFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace, _GetLogicalEnd(Necklace)
+		char * Position = _SearchNecklaceFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex, Necklace, _GetLogicalEnd(Necklace)
 			,Necklace + NecklaceBeginIndex, Necklace + NecklaceEndIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 
 	}
 
@@ -849,77 +965,77 @@ public:
 
 		const char* NecklaceLogicalEnd = _GetLogicalEnd(Necklace);
 
-		char* Position = _SearchNecklaceFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace, NecklaceLogicalEnd,
+		char* Position = _SearchNecklaceFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex, Necklace, NecklaceLogicalEnd,
 			Necklace, NecklaceLogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 
 	}
 
 	unsigned short SearchNecklaceFromLeft(const char Necklace[], unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
 	{
 
-		char* Position = _SearchNecklaceFromLeft(_Begin, _LogicalEnd - 1, Necklace, _GetLogicalEnd(Necklace)
+		char* Position = _SearchNecklaceFromLeft(Begin, _LogicalEnd - 1, Necklace, _GetLogicalEnd(Necklace)
 			, Necklace + NecklaceBeginIndex, Necklace + NecklaceEndIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 
 	}
 
 	unsigned short SearchNecklaceFromLeft(const char Necklace[]) const
 	{
 
-		char* Position = _SearchNecklaceFromLeft(_Begin, _LogicalEnd - 1, Necklace, _GetLogicalEnd(Necklace) - 1);
+		char* Position = _SearchNecklaceFromLeft(Begin, _LogicalEnd - 1, Necklace, _GetLogicalEnd(Necklace) - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchNecklaceFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Necklace
 	, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
 	{
 		
-		char* Position = _SearchNecklaceFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace._Begin
-			, Necklace._LogicalEnd, Necklace._Begin + NecklaceBeginIndex, Necklace._Begin + NecklaceEndIndex);
+		char* Position = _SearchNecklaceFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex, Necklace.Begin
+			, Necklace._LogicalEnd, Necklace.Begin + NecklaceBeginIndex, Necklace.Begin + NecklaceEndIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchNecklaceFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Necklace) const
 	{
 
-		char* Position = _SearchNecklaceFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace._Begin, 
-			Necklace._LogicalEnd, Necklace._Begin, Necklace._LogicalEnd - 1);
+		char* Position = _SearchNecklaceFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex, Necklace.Begin, 
+			Necklace._LogicalEnd, Necklace.Begin, Necklace._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 
 	}
 
 	unsigned short SearchNecklaceFromLeft(StringKernel& Necklace, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
 	{
 
-		char* Position = _SearchNecklaceFromLeft(_Begin, _LogicalEnd - 1, Necklace._Begin, Necklace._LogicalEnd
-			, Necklace._Begin + NecklaceBeginIndex, Necklace._Begin + NecklaceEndIndex);
+		char* Position = _SearchNecklaceFromLeft(Begin, _LogicalEnd - 1, Necklace.Begin, Necklace._LogicalEnd
+			, Necklace.Begin + NecklaceBeginIndex, Necklace.Begin + NecklaceEndIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 
 	}
 
 	unsigned short SearchNecklaceFromLeft(StringKernel& Necklace) const
 	{
 		
-		char* Position = _SearchNecklaceFromLeft(_Begin, _LogicalEnd - 1, Necklace._Begin, Necklace._LogicalEnd - 1);
+		char* Position = _SearchNecklaceFromLeft(Begin, _LogicalEnd - 1, Necklace.Begin, Necklace._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchNecklaceFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Necklace[]
 		, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
 	{
 		
-		char* Position = _SearchNecklaceFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace
+		char* Position = _SearchNecklaceFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Necklace
 			, _GetLogicalEnd(Necklace) , Necklace + NecklaceBeginIndex, Necklace + NecklaceEndIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchNecklaceFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Necklace[]) const
@@ -927,290 +1043,290 @@ public:
 
 		const char* NecklaceLogicalEnd = _GetLogicalEnd(Necklace);
 
-		char* Position = _SearchNecklaceFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace, NecklaceLogicalEnd,
+		char* Position = _SearchNecklaceFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Necklace, NecklaceLogicalEnd,
 			Necklace, NecklaceLogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchNecklaceFromRight(const char Necklace[], unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
 	{
 
-		char* Position = _SearchNecklaceFromRight(_Begin, _LogicalEnd - 1, Necklace, _GetLogicalEnd(Necklace)
+		char* Position = _SearchNecklaceFromRight(Begin, _LogicalEnd - 1, Necklace, _GetLogicalEnd(Necklace)
 			, Necklace + NecklaceBeginIndex, Necklace + NecklaceEndIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchNecklaceFromRight(const char Necklace[]) const
 	{
 
-		char* Position = _SearchNecklaceFromRight(_Begin, _LogicalEnd - 1, Necklace, _GetLogicalEnd(Necklace) - 1);
+		char* Position = _SearchNecklaceFromRight(Begin, _LogicalEnd - 1, Necklace, _GetLogicalEnd(Necklace) - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchNecklaceFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Necklace
 		, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
 	{
 		
-		char* Position = _SearchNecklaceFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace._Begin
-			, Necklace._LogicalEnd, Necklace._Begin + NecklaceBeginIndex, Necklace._Begin + NecklaceEndIndex);
+		char* Position = _SearchNecklaceFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Necklace.Begin
+			, Necklace._LogicalEnd, Necklace.Begin + NecklaceBeginIndex, Necklace.Begin + NecklaceEndIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchNecklaceFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Necklace) const
 	{
 
-		char* Position = _SearchNecklaceFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Necklace._Begin,
-			Necklace._LogicalEnd, Necklace._Begin, Necklace._LogicalEnd - 1);
+		char* Position = _SearchNecklaceFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Necklace.Begin,
+			Necklace._LogicalEnd, Necklace.Begin, Necklace._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchNecklaceFromRight(StringKernel& Necklace, unsigned short NecklaceBeginIndex, unsigned short NecklaceEndIndex) const
 	{
 
-		char* Position = _SearchNecklaceFromRight(_Begin, _LogicalEnd - 1, Necklace._Begin, Necklace._LogicalEnd
-			, Necklace._Begin + NecklaceBeginIndex, Necklace._Begin + NecklaceEndIndex);
+		char* Position = _SearchNecklaceFromRight(Begin, _LogicalEnd - 1, Necklace.Begin, Necklace._LogicalEnd
+			, Necklace.Begin + NecklaceBeginIndex, Necklace.Begin + NecklaceEndIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchNecklaceFromRight(StringKernel& Necklace) const
 	{
 
-		char* Position = _SearchNecklaceFromRight(_Begin, _LogicalEnd - 1, Necklace._Begin, Necklace._LogicalEnd - 1);
+		char* Position = _SearchNecklaceFromRight(Begin, _LogicalEnd - 1, Necklace.Begin, Necklace._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Gems[]
 		, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchGemFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems, _GetLogicalEnd(Gems),
+		char* Position = _SearchGemFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems, _GetLogicalEnd(Gems),
 			Gems + FirstGemIndex, Gems + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Gems[]) const
 	{
 		const char* GemsLogicalEnd = _GetLogicalEnd(Gems);
 
-		char* Position = _SearchGemFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems, GemsLogicalEnd, 
+		char* Position = _SearchGemFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems, GemsLogicalEnd, 
 			Gems, GemsLogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromLeft(const char Gems[], unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 		
-		char* Position = _SearchGemFromLeft(_Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems), Gems + FirstGemIndex
+		char* Position = _SearchGemFromLeft(Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems), Gems + FirstGemIndex
 			, Gems + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromLeft(const char Gems[]) const
 	{
 
-		char* Position = _SearchGemFromLeft(_Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems) - 1);
+		char* Position = _SearchGemFromLeft(Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems) - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Gems
 		, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 		
-		char* Position = _SearchGemFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems._Begin, Gems._LogicalEnd
-			, Gems._Begin + FirstGemIndex, Gems._Begin + LastGemIndex);
+		char* Position = _SearchGemFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems.Begin, Gems._LogicalEnd
+			, Gems.Begin + FirstGemIndex, Gems.Begin + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Gems) const
 	{
 
-		char* Position = _SearchGemFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems._Begin, Gems._LogicalEnd
-			, Gems._Begin, Gems._LogicalEnd - 1);
+		char* Position = _SearchGemFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems.Begin, Gems._LogicalEnd
+			, Gems.Begin, Gems._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromLeft(StringKernel& Gems, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchGemFromLeft(_Begin, _LogicalEnd - 1, Gems._Begin, Gems._LogicalEnd, Gems._Begin + FirstGemIndex,
-			Gems._Begin + LastGemIndex);
+		char* Position = _SearchGemFromLeft(Begin, _LogicalEnd - 1, Gems.Begin, Gems._LogicalEnd, Gems.Begin + FirstGemIndex,
+			Gems.Begin + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromLeft(StringKernel& Gems) const
 	{
 
-		char* Position = _SearchGemFromLeft(_Begin, _LogicalEnd - 1, Gems._Begin, Gems._LogicalEnd - 1);
+		char* Position = _SearchGemFromLeft(Begin, _LogicalEnd - 1, Gems.Begin, Gems._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Gems[]
 		, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 		
-		char* Position = _SearchPebbleFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex,Gems, _GetLogicalEnd(Gems),
+		char* Position = _SearchPebbleFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex,Gems, _GetLogicalEnd(Gems),
 			Gems + FirstGemIndex, Gems + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Gems[]) const
 	{
 		const char* GemsLogicalEnd = _GetLogicalEnd(Gems);
 
-		char* Position = _SearchPebbleFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems, GemsLogicalEnd,
+		char* Position = _SearchPebbleFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems, GemsLogicalEnd,
 			Gems, GemsLogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromLeft(const char Gems[], unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchPebbleFromLeft(_Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems), Gems + FirstGemIndex,
+		char* Position = _SearchPebbleFromLeft(Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems), Gems + FirstGemIndex,
 			Gems + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromLeft(const char Gems[]) const
 	{
-		char* Position = _SearchPebbleFromLeft(_Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems) - 1);
+		char* Position = _SearchPebbleFromLeft(Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems) - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Gems
 		, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchPebbleFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems._Begin, Gems._LogicalEnd
-			, Gems._Begin + FirstGemIndex, Gems._Begin + LastGemIndex);
+		char* Position = _SearchPebbleFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems.Begin, Gems._LogicalEnd
+			, Gems.Begin + FirstGemIndex, Gems.Begin + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromLeft(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Gems) const
 	{
 
-		char* Position = _SearchPebbleFromLeft(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems._Begin, Gems._LogicalEnd
-			, Gems._Begin, Gems._LogicalEnd - 1);
+		char* Position = _SearchPebbleFromLeft(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems.Begin, Gems._LogicalEnd
+			, Gems.Begin, Gems._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromLeft(StringKernel& Gems, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchPebbleFromLeft(_Begin, _LogicalEnd, Gems._Begin, Gems._LogicalEnd, Gems._Begin + FirstGemIndex,
-			Gems._Begin + LastGemIndex);
+		char* Position = _SearchPebbleFromLeft(Begin, _LogicalEnd, Gems.Begin, Gems._LogicalEnd, Gems.Begin + FirstGemIndex,
+			Gems.Begin + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromLeft(StringKernel& Gems) const
 	{
 
-		char* Position = _SearchPebbleFromLeft(_Begin, _LogicalEnd - 1, Gems._Begin, Gems._LogicalEnd - 1);
+		char* Position = _SearchPebbleFromLeft(Begin, _LogicalEnd - 1, Gems.Begin, Gems._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Gems[]
 		, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchGemFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems, _GetLogicalEnd(Gems),
+		char* Position = _SearchGemFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems, _GetLogicalEnd(Gems),
 			Gems + FirstGemIndex, Gems + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Gems[]) const
 	{
 		const char* GemsLogicalEnd = _GetLogicalEnd(Gems);
 
-		char* Position = _SearchGemFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems, GemsLogicalEnd,
+		char* Position = _SearchGemFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems, GemsLogicalEnd,
 			Gems, GemsLogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromRight(const char Gems[], unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchGemFromRight(_Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems), Gems + FirstGemIndex,
+		char* Position = _SearchGemFromRight(Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems), Gems + FirstGemIndex,
 			Gems + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromRight(const char Gems[]) const
 	{
-		char* Position = _SearchGemFromRight(_Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems) - 1);
+		char* Position = _SearchGemFromRight(Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems) - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Gems
 		, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchGemFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems._Begin, Gems._LogicalEnd,
-			Gems._Begin + FirstGemIndex, Gems._Begin + LastGemIndex);
+		char* Position = _SearchGemFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems.Begin, Gems._LogicalEnd,
+			Gems.Begin + FirstGemIndex, Gems.Begin + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Gems) const
 	{
 
-		char* Position = _SearchGemFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems._Begin, Gems._LogicalEnd,
-			Gems._Begin, Gems._LogicalEnd - 1);
+		char* Position = _SearchGemFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems.Begin, Gems._LogicalEnd,
+			Gems.Begin, Gems._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromRight(StringKernel& Gems, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchGemFromRight(_Begin, _LogicalEnd, Gems._Begin, Gems._LogicalEnd, Gems._Begin + FirstGemIndex,
-			Gems._Begin + LastGemIndex);
+		char* Position = _SearchGemFromRight(Begin, _LogicalEnd, Gems.Begin, Gems._LogicalEnd, Gems.Begin + FirstGemIndex,
+			Gems.Begin + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchGemFromRight(StringKernel& Gems) const
 	{
 
-		char* Position = _SearchGemFromRight(_Begin, _LogicalEnd - 1, Gems._Begin, Gems._LogicalEnd - 1);
+		char* Position = _SearchGemFromRight(Begin, _LogicalEnd - 1, Gems.Begin, Gems._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Gems[]
 		, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchPebbleFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems, _GetLogicalEnd(Gems),
+		char* Position = _SearchPebbleFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems, _GetLogicalEnd(Gems),
 			Gems + FirstGemIndex, Gems + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, const char Gems[]) const
@@ -1218,62 +1334,62 @@ public:
 
 		const char* GemsLogicalEnd = _GetLogicalEnd(Gems);
 
-		char* Position = _SearchPebbleFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems, GemsLogicalEnd,
+		char* Position = _SearchPebbleFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems, GemsLogicalEnd,
 			Gems, GemsLogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromRight(const char Gems[], unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchPebbleFromRight(_Begin, _LogicalEnd, Gems, _GetLogicalEnd(Gems), Gems + FirstGemIndex, 
+		char* Position = _SearchPebbleFromRight(Begin, _LogicalEnd, Gems, _GetLogicalEnd(Gems), Gems + FirstGemIndex, 
 			Gems + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromRight(const char Gems[]) const
 	{
-		char* Position = _SearchPebbleFromRight(_Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems) - 1);
+		char* Position = _SearchPebbleFromRight(Begin, _LogicalEnd - 1, Gems, _GetLogicalEnd(Gems) - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Gems
 		, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 	
-		char* Position = _SearchPebbleFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems._Begin, Gems._LogicalEnd,
-			Gems._Begin + FirstGemIndex, Gems._Begin + LastGemIndex);
+		char* Position = _SearchPebbleFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems.Begin, Gems._LogicalEnd,
+			Gems.Begin + FirstGemIndex, Gems.Begin + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromRight(unsigned short CofferBeginIndex, unsigned short CofferEndIndex, StringKernel& Gems) const
 	{
 
-		char* Position = _SearchPebbleFromRight(_Begin + CofferBeginIndex, _Begin + CofferEndIndex, Gems._Begin, Gems._LogicalEnd,
-			Gems._Begin, Gems._LogicalEnd - 1);
+		char* Position = _SearchPebbleFromRight(Begin + CofferBeginIndex, Begin + CofferEndIndex, Gems.Begin, Gems._LogicalEnd,
+			Gems.Begin, Gems._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromRight(StringKernel& Gems, unsigned short FirstGemIndex, unsigned short LastGemIndex) const
 	{
 
-		char* Position = _SearchPebbleFromRight(_Begin, _LogicalEnd, Gems._Begin, Gems._LogicalEnd, Gems._Begin + FirstGemIndex, 
-			Gems._Begin + LastGemIndex);
+		char* Position = _SearchPebbleFromRight(Begin, _LogicalEnd, Gems.Begin, Gems._LogicalEnd, Gems.Begin + FirstGemIndex, 
+			Gems.Begin + LastGemIndex);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	unsigned short SearchPebbleFromRight(StringKernel& Gems) const
 	{
 
-		char* Position = _SearchGemFromRight(_Begin, _LogicalEnd - 1, Gems._Begin, Gems._LogicalEnd - 1);
+		char* Position = _SearchGemFromRight(Begin, _LogicalEnd - 1, Gems.Begin, Gems._LogicalEnd - 1);
 
-		return (Position == nullptr) ? NoPosition : (Position - _Begin);
+		return (Position == nullptr) ? NoPosition : (Position - Begin);
 	}
 
 	void Replace(unsigned short StartWritingIndex, unsigned short StopWritingIndex, const char Source[],
@@ -1293,7 +1409,7 @@ public:
 
 	void Print() const
 	{
-		char* BeginCopy = _Begin;
+		char* BeginCopy = Begin;
 
 		while (BeginCopy < _LogicalEnd)
 		{

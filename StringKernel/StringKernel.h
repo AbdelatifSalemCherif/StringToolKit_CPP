@@ -111,11 +111,11 @@ private:
 			*Address2 = TempAddress;
 		}
 
-		void Swap(_clsRange Range)
+		void Swap(_clsRange& Range)
 		{
-			Swap2Address((char**)& Begin, (char**)& Range.Begin);
+			Swap2Address((const char**)& Begin, (const char**)& Range.Begin);
 
-			Swap2Address((char**)& End, (char**)& Range.End);
+			Swap2Address((const char**)& End, (const char**)& Range.End);
 		}
 
 		enum enStartFrom { Left, Right };
@@ -238,7 +238,7 @@ private:
 
 			char* StopWrite = StartWrite + New.Length() - 1;
 
-			End = Write(StopWrite + 1, *this, Right);
+			End = Write(StopWrite + 1, NewRange(StartWrite, End), Right);
 
 			Write(StartWrite, New, Right);
 
@@ -752,7 +752,7 @@ public:
 	{
 		_LogicalRange.Swap(Data2._LogicalRange);
 
-		_clsRange::Swap2Address((char**)& _PhysicalEnd, (char**)& Data2._PhysicalEnd);
+		_clsRange::Swap2Address((const char**)& _PhysicalEnd, (const char**)& Data2._PhysicalEnd);
 
 	}
 

@@ -8,20 +8,14 @@ using namespace std;
 int main()
 {
 
-	StringKernel Abdou("Abdelatif SALEM CHERIF"), Maria("Maria RAHAB");
+	StringKernel Maria("Maria RAHAB");
 
-	cout << "Capacity = " << Abdou.Capacity() << endl;
-	cout << "Length = " << Abdou.Length() << endl;
-	cout << "Size = " << Abdou.Size() << endl;
+	Maria.Print();
+	cout << endl;
 
 
-	Abdou.Insert(9, " SALlEM");
-
-	cout << "Capacity = " << Abdou.Capacity() << endl;
-	cout << "Length = " << Abdou.Length() << endl;
-	cout << "Size = " << Abdou.Size() << endl;
-
-	cout << Abdou.Value() << endl;
+	cout << (short)Maria.SearchNecklaceFromLeft("RAHABB");
+	cout << endl;
 
 	return 0;
 }

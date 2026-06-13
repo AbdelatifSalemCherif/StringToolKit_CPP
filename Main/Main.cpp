@@ -8,14 +8,13 @@ using namespace std;
 int main()
 {
 
-	StringKernel Maria("Maria RAHAB");
+	StringKernel Abdou("Abdelatif SALEM CHERIF");
 
-	Maria.Print();
-	cout << endl;
+	cout << "Abdou = " << Abdou.Value() << endl << endl;
 
+	Abdou.Replace(0, 8, "Abdou");
 
-	cout << (short)Maria.SearchNecklaceFromLeft("RAHABB");
-	cout << endl;
+	cout << "Abdou = " << Abdou.Value() << endl << endl;
 
 	return 0;
 }

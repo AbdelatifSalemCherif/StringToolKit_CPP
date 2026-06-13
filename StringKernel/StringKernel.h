@@ -203,10 +203,12 @@ private:
 			return End - Begin + 1;
 		}
 
-		void Assignement(const _clsRange& New)
+		void Assignment(const _clsRange& New)
 		{
-
-			End = Write(Begin, New, Left);
+			if (!IsSameData(New))
+			{
+				End = Write(Begin, New, Left);
+			}
 
 		}
 
@@ -224,7 +226,7 @@ private:
 
 		}
 
-		void Preppend(const _clsRange& New)
+		void Prepend(const _clsRange& New)
 		{
 
 			End = Write(Begin + New.Length(), *this, Right);
@@ -383,6 +385,30 @@ private:
 			return nullptr;
 		}
 
+		void Replace(_clsRange DestinationRange, const _clsRange& SourceRange)
+		{
+			unsigned short WriteLength = DestinationRange.Length(), ReadLength = SourceRange.Length();
+
+			if (WriteLength == ReadLength)
+			{
+				DestinationRange.Assignment(SourceRange);
+			}
+			else if (WriteLength > ReadLength)
+			{
+				DestinationRange.Assignment(SourceRange);
+
+				Delete(NewRange(DestinationRange.End + 1, DestinationRange.End + WriteLength - ReadLength));
+			}
+			else
+			{
+				char* StopWrite = DestinationRange.End + ReadLength - WriteLength;
+
+				End = Write(StopWrite + 1, NewRange(DestinationRange.End + 1, End), Right);
+
+				NewRange(DestinationRange.Begin, StopWrite).Assignment(SourceRange);
+			}
+
+		}
 
 	};
 
@@ -406,16 +432,12 @@ private:
 		return Start + Capacity - 1;
 	}
 
-	void _Assignement(const _clsRange& SourceRange)
+	void _Assignment(const _clsRange& SourceRange)
 	{
 
-		if (!_LogicalRange.IsSameData(SourceRange))
-		{
-			_Reallocate(SourceRange.Length(), true);
+		_Reallocate(SourceRange.Length(), false);
 
-			_LogicalRange.Assignement(SourceRange);
-
-		}
+		_LogicalRange.Assignment(SourceRange);
 
 	}
 
@@ -439,12 +461,12 @@ private:
 		_LogicalRange.Append(SourceRange);
 	}
 
-	void _Preppend(_clsRange SourceRange)
+	void _Prepend(_clsRange SourceRange)
 	{
 
 		_Reallocate(SourceRange.Length() - 1 + Length(), true);
 
-		_LogicalRange.Preppend(SourceRange.RawRange());
+		_LogicalRange.Prepend(SourceRange.RawRange());
 
 	}
 
@@ -591,6 +613,13 @@ private:
 
 	}
 
+	void _Replace(unsigned short StartWriteIndex, unsigned short StopWriteIndex, const _clsRange& SourceRange)
+	{
+		_Reallocate(_LogicalRange.Length() + SourceRange.Length() - (StopWriteIndex - StartWriteIndex + 1), true);
+
+		_LogicalRange.Replace(_LogicalRange.RawRange().SubRange(StartWriteIndex, StopWriteIndex), SourceRange);
+	}
+
 protected:
 
 	char* _GetBegin() const
@@ -634,7 +663,7 @@ protected:
 			if (DoSaveData)
 			{
 
-				_LogicalRange.Assignement(LastLogicalRange);
+				_LogicalRange.Assignment(LastLogicalRange);
 
 			}
 			else
@@ -682,7 +711,7 @@ public:
 
 		_LogicalRange.Begin = new char[Capacity];
 
-		_LogicalRange.Assignement(ValueRange);
+		_LogicalRange.Assignment(ValueRange);
 
 		_PhysicalEnd = _GetNewPhysicalEnd(_LogicalRange.Begin, Capacity);
 
@@ -696,15 +725,15 @@ public:
 
 		_PhysicalEnd = _GetNewPhysicalEnd(_LogicalRange.Begin, Capacity);
 
-		_LogicalRange.Assignement(Value._LogicalRange);
+		_LogicalRange.Assignment(Value._LogicalRange);
 
 	}
 
 	~StringKernel()
 	{
-		cout << "Hi Destructor !" << endl;
-
 		delete[] _LogicalRange.Begin;
+
+		cout << "Hi Destructor !" << endl;
 	}
 
 	const char* Value() const
@@ -777,26 +806,26 @@ public:
 		_LogicalRange.AssigneStopCharacter();
 	}
 
-	void Assignement(const char Source[])
+	void Assignment(const char Source[])
 	{
 
-		_Assignement(_clsRange::NewRange(Source));
+		_Assignment(_clsRange::NewRange(Source));
 
 	}
 
-	void Assignement(const StringKernel& Source)
+	void Assignment(const StringKernel& Source)
 	{
-		_Assignement(Source._LogicalRange);
+		_Assignment(Source._LogicalRange);
 	}
 
 	void Copy(const char Source[])
 	{
-		Assignement(Source);
+		Assignment(Source);
 	}
 
 	void Copy(const StringKernel& Source)
 	{
-		Assignement(Source);
+		Assignment(Source);
 	}
 
 	void Concatenate(const char Source1[], const char Source2[])
@@ -829,15 +858,15 @@ public:
 		_Append(Source._LogicalRange);
 	}
 
-	void Preppend(const char Source[])
+	void Prepend(const char Source[])
 	{
-		_Preppend(_clsRange::NewRange(Source));
+		_Prepend(_clsRange::NewRange(Source));
 
 	}
 
-	void Preppend(const StringKernel& Source)
+	void Prepend(const StringKernel& Source)
 	{
-		_Preppend(Source._LogicalRange);
+		_Prepend(Source._LogicalRange);
 	}
 
 	void Insert(unsigned short StartWrittingIndex, const char Source[], unsigned short StartReadingIndex, 
@@ -1284,17 +1313,26 @@ public:
 	void Replace(unsigned short StartWritingIndex, unsigned short StopWritingIndex, const char Source[],
 		unsigned short StartReadingIndex, unsigned short StopReadingIndex)
 	{
-		/*if ()
-		{
-
-		}*/
+		_Replace(StartWritingIndex, StopWritingIndex, 
+			_clsRange::NewRange(Source).RawRange().SubRange(StartReadingIndex, StopReadingIndex));
 	}
 
+	void Replace(unsigned short StartWritingIndex, unsigned short StopWritingIndex, const char Source[])
+	{
+		_Replace(StartWritingIndex, StopWritingIndex, _clsRange::NewRange(Source).RawRange());
+	}
 
+	void Replace(unsigned short StartWritingIndex, unsigned short StopWritingIndex, const StringKernel& Source,
+		unsigned short StartReadingIndex, unsigned short StopReadingIndex)
+	{
+		_Replace(StartWritingIndex, StopWritingIndex,
+			Source._LogicalRange.RawRange().SubRange(StartReadingIndex, StopReadingIndex));
+	}
 
-
-
-
+	void Replace(unsigned short StartWritingIndex, unsigned short StopWritingIndex, const StringKernel& Source)
+	{
+		_Replace(StartWritingIndex, StopWritingIndex, Source._LogicalRange.RawRange());
+	}
 
 	void Print() const
 	{
@@ -1305,12 +1343,6 @@ public:
 			cout << *Reader++;
 		}
 	}
-
-
-
-
-
-
-
+	
 
 };

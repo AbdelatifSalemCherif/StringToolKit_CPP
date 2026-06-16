@@ -11,76 +11,105 @@ private:
 	
 	class _clsRange
 	{
+	private:
+
+		char* _Begin;
+		char* _End;
+
 	public:
 
-		char* Begin;
-		char* End;
-
-		_clsRange()
+		_clsRange(char* Begin, char* End)
 		{
-			Begin = nullptr;
-			End = nullptr;
+			_Begin = Begin;
+			_End = End;
 		}
 
-		_clsRange(char* Begin_, char* End_)
+		_clsRange(const char* Begin)
 		{
-			Begin = Begin_;
-			End = End_;
+			_Begin = (char*)Begin;
+			_End = GetLogicalEnd(Begin);
+
 		}
 
-		_clsRange(const char* Begin_)
+		void SetBegin(char* Begin)
 		{
-			Begin = (char*)Begin_;
-			End = GetLogicalEnd(Begin_);
+			_Begin = Begin;
 		}
 
-		static _clsRange NewRange(char* Begin_, char* End_)
+		char* GetBegin() const
 		{
-			_clsRange Range(Begin_, End_);
-
-			return Range;
+			return _Begin;
 		}
 
-		static _clsRange NewRange(const char* Begin_)
+		__declspec(property(get = GetBegin, put = SetBegin)) char* Begin;
+
+		void SetEnd(char* End)
 		{
-			return NewRange((char*) Begin_, GetLogicalEnd(Begin_));
+			_End = End;
+		}
+
+		char* GetEnd() const
+		{
+			return _End;
+		}
+
+		__declspec(property(get = GetEnd, put = SetEnd)) char* End;
+
+		static _clsRange NewRange(char* Begin, char* End)
+		{
+
+			return _clsRange(Begin, End);
+		}
+
+		static _clsRange NewRange(const char* Begin)
+		{
+			return _clsRange(Begin);
 		}
 
 		_clsRange RawRange() const
 		{
-			return NewRange(Begin, End - 1);
+			return (*_End == '\0') ? NewRange(_Begin, _End - 1) : *this;
 		}
 
-		static char* GetLogicalEnd(const char* Begin_)
+		static char* GetLogicalEnd(const char* Begin)
 		{
-			while (*Begin_)
+			while (*Begin)
 			{
-				Begin_++;
+				Begin++;
 			}
 
-			return (char*) Begin_;
+			return (char*) Begin;
 		}
 
 		bool IsAddressInside(const char* Address) const
 		{
-			return Address >= Begin && Address <= End;
+			return Address >= _Begin && Address <= _End;
 		}
 
 		bool IsIndexInside(unsigned short Index) const
 		{
-			return IsAddressInside(Begin + Index);
+			return IsAddressInside(_Begin + Index);
 		}
 
 		_clsRange HandleRangeToBeInside(_clsRange Range) const
 		{
-			if (Range.Begin < Begin)
+			if (Range._Begin > Range._End)
 			{
-				Range.Begin = Begin;
+				Swap2Address((const char**)& Range._Begin, (const char**)& Range._End);
 			}
 
-			if (Range.End > End)
+			if (Range._Begin < _Begin)
 			{
-				Range.End = End;
+				Range._Begin = _Begin;
+			}
+			else if (Range._Begin > _End)
+			{
+				Range._Begin = _End;
+			}
+
+			if (Range._End > _End || Range._End < _Begin)
+			{
+				Range._End = _End;
 			}
 
 			return Range;
@@ -88,7 +117,7 @@ private:
 
 		bool IsEmpty() const
 		{
-			return End == Begin;
+			return _End == _Begin && *_End == '\0';
 		}
 
 		bool IsSameData(const _clsRange& Range) const
@@ -96,7 +125,7 @@ private:
 			
 			bool IsSame = Length() == Range.Length();
 
-			for (const char* Reader1 = Begin, *Reader2 = Range.Begin; IsSame && (Begin < Range.End); Reader1++,Reader2++)
+			for (const char* Reader1 = _Begin, *Reader2 = Range._Begin; IsSame && (_Begin < Range._End); Reader1++,Reader2++)
 			{
 				IsSame = *Reader1 == *Reader2;
 			}
@@ -113,9 +142,9 @@ private:
 
 		void Swap(_clsRange& Range)
 		{
-			Swap2Address((const char**)& Begin, (const char**)& Range.Begin);
+			Swap2Address((const char**)& _Begin, (const char**)& Range._Begin);
 
-			Swap2Address((const char**)& End, (const char**)& Range.End);
+			Swap2Address((const char**)& _End, (const char**)& Range._End);
 		}
 
 		enum enStartFrom { Left, Right };
@@ -126,18 +155,18 @@ private:
 
 			if (StartWriteFrom == Left)
 			{
-				char* Writer = StartWrite, * Reader = ReadingRange.Begin;
+				char* Writer = StartWrite, * Reader = ReadingRange._Begin;
 
-				while (Reader <= ReadingRange.End)
+				while (Reader <= ReadingRange._End)
 				{
 					*Writer++ = *Reader++;
 				}
 			}
 			else
 			{
-				char* Writer = StropWrite, * Reader = ReadingRange.End;
+				char* Writer = StropWrite, * Reader = ReadingRange._End;
 
-				while (Reader >= ReadingRange.Begin)
+				while (Reader >= ReadingRange._Begin)
 				{
 					*Writer-- = *Reader--;
 				}
@@ -153,12 +182,12 @@ private:
 
 		void AssigneStopCharacter()
 		{
-			*End = '\n';
+			*_End = '\n';
 		}
 
 		void Clear()
 		{
-			End = Begin;
+			_End = _Begin;
 
 			AssigneStopCharacter();
 		}
@@ -166,48 +195,48 @@ private:
 		char at(unsigned short Index) const
 		{
 
-			return IsAddressInside(Begin + Index) ? *(Begin + Index) : '\0';
+			return IsAddressInside(_Begin + Index) ? *(_Begin + Index) : '\0';
 
 		}
 
 		void PushBack(char NewCharacter)
 		{
 
-			*++End = NewCharacter;
+			*++_End = NewCharacter;
 
 		}
 
 		void PopBack()
 		{
-			if (End > Begin)
+			if (_End > _Begin)
 			{
-				End--;
+				_End--;
 			}
 
 		}
 
-		_clsRange SubRange(unsigned short From, unsigned short To) const
+		_clsRange SubRange(unsigned short From, unsigned short To)
 		{
 
-			return HandleRangeToBeInside(NewRange(Begin + From, Begin + To));
+			return HandleRangeToBeInside(NewRange(_Begin + From, _Begin + To));
 
 		}
 
 		unsigned short Size() const
 		{
-			return End - Begin;
+			return _End - _Begin;
 		}
 
 		unsigned short Length() const
 		{
-			return End - Begin + 1;
+			return _End - _Begin + 1;
 		}
 
 		void Assignment(const _clsRange& New)
 		{
 			if (!IsSameData(New))
 			{
-				End = Write(Begin, New, Left);
+				_End = Write(_Begin, New, Left);
 			}
 
 		}
@@ -215,23 +244,23 @@ private:
 		void Concatenate(const _clsRange& New1, const _clsRange& New2)
 		{
 
-			End = Write(Write(Begin, New1, Left) + 1, New2, Left);
+			_End = Write(Write(_Begin, New1, Left) + 1, New2, Left);
 
 		}
 
 		void Append(const _clsRange& New)
 		{
 
-			End = Write(End + 1, New, Left);
+			_End = Write(_End + 1, New, Left);
 
 		}
 
 		void Prepend(const _clsRange& New)
 		{
 
-			End = Write(Begin + New.Length(), *this, Right);
+			_End = Write(_Begin + New.Length(), *this, Right);
 
-			Write(Begin, New, Left);
+			Write(_Begin, New, Left);
 
 		}
 
@@ -240,7 +269,7 @@ private:
 
 			char* StopWrite = StartWrite + New.Length() - 1;
 
-			End = Write(StopWrite + 1, NewRange(StartWrite, End), Right);
+			_End = Write(StopWrite + 1, NewRange(StartWrite, _End), Right);
 
 			Write(StartWrite, New, Right);
 
@@ -248,13 +277,13 @@ private:
 
 		void Insert(unsigned short StartWrite, const _clsRange& New)
 		{
-			Insert(Begin + StartWrite, New);
+			Insert(_Begin + StartWrite, New);
 		}
 
 		void Delete(const _clsRange& DeleteRange)
 		{
 
-			End = Write(DeleteRange.Begin, NewRange(DeleteRange.End + 1, End), Left);
+			_End = Write(DeleteRange._Begin, NewRange(DeleteRange._End + 1, _End), Left);
 
 		}
 
@@ -263,27 +292,27 @@ private:
 
 			if (StratSearchFrom == Left)
 			{
-				char* CofferReader = Begin, * NecklaceReader = Necklace.Begin;
+				char* CofferReader = _Begin, * NecklaceReader = Necklace._Begin;
 
-				while (CofferReader <= End)
+				while (CofferReader <= _End)
 				{
 					if (*CofferReader == *NecklaceReader)
 					{
 
-						if (NecklaceReader == Necklace.End)
+						if (NecklaceReader == Necklace._End)
 						{
-							return CofferReader - (Necklace.End - Necklace.Begin);
+							return CofferReader - (Necklace._End - Necklace._Begin);
 						}
 						else
 						{
 							NecklaceReader++;
 						}
 					}
-					else if (NecklaceReader > Necklace.Begin)
+					else if (NecklaceReader > Necklace._Begin)
 					{
-						CofferReader -= NecklaceReader - Necklace.Begin;
+						CofferReader -= NecklaceReader - Necklace._Begin;
 
-						NecklaceReader = Necklace.Begin;
+						NecklaceReader = Necklace._Begin;
 
 					}
 
@@ -293,14 +322,14 @@ private:
 			}
 			else
 			{
-				char* CofferReader = End, * NecklaceReader = Necklace.End;
+				char* CofferReader = _End, * NecklaceReader = Necklace._End;
 
-				while (CofferReader >= Begin)
+				while (CofferReader >= _Begin)
 				{
 					if (*CofferReader == *NecklaceReader)
 					{
 
-						if (NecklaceReader == Necklace.Begin)
+						if (NecklaceReader == Necklace._Begin)
 						{
 							return CofferReader;
 						}
@@ -309,11 +338,11 @@ private:
 							NecklaceReader--;
 						}
 					}
-					else if (NecklaceReader < Necklace.End)
+					else if (NecklaceReader < Necklace._End)
 					{
-						CofferReader += Necklace.End - NecklaceReader;
+						CofferReader += Necklace._End - NecklaceReader;
 
-						NecklaceReader = Necklace.End;
+						NecklaceReader = Necklace._End;
 
 					}
 
@@ -329,9 +358,9 @@ private:
 
 			if (StartSearchFrom == Left)
 			{
-				for (char* CofferReader = Begin; CofferReader <= End; CofferReader++)
+				for (char* CofferReader = _Begin; CofferReader <= _End; CofferReader++)
 				{
-					for (char* GemsReader = Gems.Begin; GemsReader <= Gems.End; GemsReader++)
+					for (char* GemsReader = Gems._Begin; GemsReader <= Gems._End; GemsReader++)
 					{
 						if (*CofferReader == *GemsReader)
 						{
@@ -342,9 +371,9 @@ private:
 			}
 			else
 			{
-				for (char* CofferReader = End; CofferReader >= Begin; CofferReader--)
+				for (char* CofferReader = _End; CofferReader >= _Begin; CofferReader--)
 				{
-					for (char* GemsReader = Gems.End; GemsReader >= Gems.Begin; GemsReader--)
+					for (char* GemsReader = Gems._End; GemsReader >= Gems._Begin; GemsReader--)
 					{
 						if (*CofferReader == *GemsReader)
 						{
@@ -362,7 +391,7 @@ private:
 			
 			if (StartSearchFrom == Left)
 			{
-				for (char* CofferReader = Begin; CofferReader <= End; CofferReader++)
+				for (char* CofferReader = _Begin; CofferReader <= _End; CofferReader++)
 				{
 					if (Gems.SearchGem(NewRange(CofferReader, CofferReader), Left) == nullptr)
 					{
@@ -373,7 +402,7 @@ private:
 			}
 			else
 			{
-				for (char* CofferReader = End; CofferReader >= Begin; CofferReader--)
+				for (char* CofferReader = _End; CofferReader >= _Begin; CofferReader--)
 				{
 					if (Gems.SearchGem(NewRange(CofferReader, CofferReader), Left) == nullptr)
 					{
@@ -397,22 +426,22 @@ private:
 			{
 				DestinationRange.Assignment(SourceRange);
 
-				Delete(NewRange(DestinationRange.End + 1, DestinationRange.End + WriteLength - ReadLength));
+				Delete(NewRange(DestinationRange._End + 1, DestinationRange._End + WriteLength - ReadLength));
 			}
 			else
 			{
-				char* StopWrite = DestinationRange.End + ReadLength - WriteLength;
+				char* StopWrite = DestinationRange._End + ReadLength - WriteLength;
 
-				End = Write(StopWrite + 1, NewRange(DestinationRange.End + 1, End), Right);
+				_End = Write(StopWrite + 1, NewRange(DestinationRange._End + 1, _End), Right);
 
-				NewRange(DestinationRange.Begin, StopWrite).Assignment(SourceRange);
+				NewRange(DestinationRange._Begin, StopWrite).Assignment(SourceRange);
 			}
 
 		}
 
 	};
 
-	_clsRange _LogicalRange;
+	_clsRange _LogicalRange = _clsRange(nullptr, nullptr);
 
 	char* _PhysicalEnd;
 	
@@ -430,6 +459,38 @@ private:
 	char* _GetNewPhysicalEnd(char* Start, unsigned short Capacity) const
 	{
 		return Start + Capacity - 1;
+	}
+
+	void _Reallocate(unsigned short NewLogicalLength, bool DoSaveData)
+	{
+
+		if (!_HaveMoreSpace(NewLogicalLength))
+		{
+			_clsRange LastLogicalRange = _LogicalRange;
+
+			unsigned short Capacity = _GetNewCapacity(NewLogicalLength);
+
+			_LogicalRange.Begin = new char[Capacity];
+
+			_PhysicalEnd = _GetNewPhysicalEnd(_LogicalRange.Begin, Capacity);
+
+			if (DoSaveData)
+			{
+
+				_LogicalRange.Assignment(LastLogicalRange);
+
+			}
+			else
+			{
+				_LogicalRange.Clear();
+			}
+
+			delete[] LastLogicalRange.Begin;
+		}
+		else if (!DoSaveData)
+		{
+			_LogicalRange.Clear();
+		}
 	}
 
 	void _Assignment(const _clsRange& SourceRange)
@@ -627,7 +688,7 @@ protected:
 		return _LogicalRange.Begin;
 	}
 
-	char* _GetLogicalEnd() const
+	char* _GetLogicalEnd()  const
 	{
 		return _LogicalRange.End;
 	}
@@ -637,46 +698,9 @@ protected:
 		return _PhysicalEnd;
 	}
 
-	_clsRange GetLogicalRange() const
-	{
-		return _LogicalRange;
-	}
-
 	const char* _GetLogicalEnd(const char Data[], const unsigned short& Length) const
 	{
 		return Data + Length - 1;
-	}
-
-	void _Reallocate(unsigned short NewLogicalLength, bool DoSaveData)
-	{
-
-		if (!_HaveMoreSpace(NewLogicalLength))
-		{
-			_clsRange LastLogicalRange = _LogicalRange;
-
-			unsigned short Capacity = _GetNewCapacity(NewLogicalLength);
-
-			_LogicalRange.Begin = new char[Capacity];
-
-			_PhysicalEnd = _GetNewPhysicalEnd(_LogicalRange.Begin, Capacity);
-
-			if (DoSaveData)
-			{
-
-				_LogicalRange.Assignment(LastLogicalRange);
-
-			}
-			else
-			{
-				_LogicalRange.Clear();
-			}
-
-			delete[] LastLogicalRange.Begin;
-		}
-		else if (!DoSaveData)
-		{
-			_LogicalRange.Clear();
-		}
 	}
 
 	void _Swap2Indices(unsigned short& Index1, unsigned short& Index2) const
@@ -736,7 +760,7 @@ public:
 		cout << "Hi Destructor !" << endl;
 	}
 
-	const char* Value() const
+	const char* GetValue() const
 	{
 		return _LogicalRange.Begin;
 	}

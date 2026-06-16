@@ -10,11 +10,11 @@ int main()
 
 	StringKernel Abdou("Abdelatif SALEM CHERIF");
 
-	cout << "Abdou = " << Abdou.Value() << endl << endl;
+	cout << "Abdou = " << Abdou.GetValue() << endl << endl;
 
-	Abdou.Replace(0, 8, "Abdou");
+	Abdou.Replace(1400, 200, "Abdou");
 
-	cout << "Abdou = " << Abdou.Value() << endl << endl;
+	cout << "Abdou = " << Abdou.GetValue() << endl << endl;
 
 	return 0;
 }

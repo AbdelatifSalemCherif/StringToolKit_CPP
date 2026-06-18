@@ -439,6 +439,133 @@ private:
 
 		}
 
+		static bool IsUpper(char Character)
+		{
+			return Character >= 65 && Character <= 90;
+		}
+
+		static bool IsLower(char Character)
+		{
+			return Character >= 97 && Character <= 122;
+		}
+
+		static bool IsVowel(char Character)
+		{
+			return Character == 65 || Character == 69 || Character == 73 || Character == 79 || Character == 85
+				|| Character == 97 || Character == 101 || Character == 105 || Character == 111 || Character == 117;
+		}
+
+		static bool IsDigit(char Character)
+		{
+			return Character >= 48 && Character <= 57;
+		}
+
+		static char ToUpper(char Letter)
+		{
+
+			return IsLower(Letter) ? Letter & ~0x20 : Letter ;
+		}
+
+		static char ToLower(char Letter)
+		{
+			return IsUpper(Letter) ? Letter | 0x20 : Letter;
+		}
+
+		short CountAllUpperCase() const
+		{
+			short UpperCase = 0;
+
+			for (char* Reader = _Begin; Reader <= _End; Reader++)
+			{
+				if (IsUpper(*Reader))
+				{
+					UpperCase++;
+				}
+			}
+
+			return UpperCase;
+		}
+
+		short CountAllLowerCase() const
+		{
+			short LowerCase = 0;
+
+			for (char* Reader = _Begin; Reader <= _End; Reader++)
+			{
+				if (IsLower(*Reader))
+				{
+					LowerCase++;
+				}
+			}
+
+			return LowerCase;
+		}
+
+		short CountAllVowels() const
+		{
+			short Counter = 0;
+
+			for (char* Reader = _Begin; Reader <= _End; Reader++)
+			{
+				if (IsVowel(*Reader))
+				{
+					Counter++;
+				}
+			}
+
+			return Counter;
+		}
+
+		short CountAllLetters(char Letter, bool MatchCase)
+		{
+			short Counter = 0;
+
+			if (MatchCase)
+			{
+				for (char* Reader = _Begin; Reader <= _End; Reader++)
+				{
+					if (*Reader == Letter)
+					{
+						Counter++;
+					}
+
+				}
+			}
+			else
+			{
+				Letter = ToUpper(Letter);
+
+				for (char* Reader = _Begin; Reader <= _End; Reader++)
+				{
+					if (ToUpper(*Reader) == Letter)
+					{
+						Counter++;
+					}
+				}
+			}
+
+			return Counter;
+		}
+
+		short CountAllWords(const _clsRange& Separator) const
+		{
+			short WordsCounter = -1;
+
+			char* SeparatorPosition = _End;
+
+			while (SeparatorPosition != nullptr)
+			{
+				WordsCounter++;
+
+				SeparatorPosition = NewRange(_Begin, SeparatorPosition).SearchNecklace(Separator, Right);
+
+
+			}
+
+			return WordsCounter;
+		}
+
+
 	};
 
 	_clsRange _LogicalRange = _clsRange(nullptr, nullptr);

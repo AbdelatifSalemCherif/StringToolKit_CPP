@@ -1,6 +1,7 @@
 #pragma once
 
 #include<iostream>
+#include <vector>
 
 using namespace std;
 
@@ -471,54 +472,54 @@ private:
 			return IsUpper(Letter) ? Letter | 0x20 : Letter;
 		}
 
-		short CountAllUpperCase() const
+		unsigned short CountAllUpperCase() const
 		{
-			short UpperCase = 0;
+			unsigned short UppersCounter = 0;
 
 			for (char* Reader = _Begin; Reader <= _End; Reader++)
 			{
 				if (IsUpper(*Reader))
 				{
-					UpperCase++;
+					UppersCounter++;
 				}
 			}
 
-			return UpperCase;
+			return UppersCounter;
 		}
 
-		short CountAllLowerCase() const
+		unsigned short CountAllLowerCase() const
 		{
-			short LowerCase = 0;
+			unsigned short LowersCounter = 0;
 
 			for (char* Reader = _Begin; Reader <= _End; Reader++)
 			{
 				if (IsLower(*Reader))
 				{
-					LowerCase++;
+					LowersCounter++;
 				}
 			}
 
-			return LowerCase;
+			return LowersCounter;
 		}
 
-		short CountAllVowels() const
+		unsigned short CountAllVowels() const
 		{
-			short Counter = 0;
+			unsigned short VowelsCounter = 0;
 
 			for (char* Reader = _Begin; Reader <= _End; Reader++)
 			{
 				if (IsVowel(*Reader))
 				{
-					Counter++;
+					VowelsCounter++;
 				}
 			}
 
-			return Counter;
+			return VowelsCounter;
 		}
 
-		short CountAllLetters(char Letter, bool MatchCase)
+		unsigned short CountAllLetters(char Letter, bool MatchCase)
 		{
-			short Counter = 0;
+			unsigned short LettersCounter = 0;
 
 			if (MatchCase)
 			{
@@ -526,7 +527,7 @@ private:
 				{
 					if (*Reader == Letter)
 					{
-						Counter++;
+						LettersCounter++;
 					}
 
 				}
@@ -539,31 +540,55 @@ private:
 				{
 					if (ToUpper(*Reader) == Letter)
 					{
-						Counter++;
+						LettersCounter++;
 					}
 				}
 			}
 
-			return Counter;
+			return LettersCounter;
 		}
 
-		short CountAllWords(const _clsRange& Separator) const
+		unsigned short CountAllWords(const _clsRange& Separator) const
 		{
-			short WordsCounter = -1;
-
-			char* SeparatorPosition = _End;
-
-			while (SeparatorPosition != nullptr)
+			if (IsEmpty())
 			{
-				WordsCounter++;
-
-				SeparatorPosition = NewRange(_Begin, SeparatorPosition).SearchNecklace(Separator, Right);
-
-
+				return 0;
 			}
 
-			return WordsCounter;
+			unsigned short SeparatorLength = Separator.Length();
+
+			if (Length() < SeparatorLength)
+			{
+				return 1;
+			}
+			else if (Length() == SeparatorLength)
+			{
+				return IsSameData(Separator) ? 0 : 1;
+			}
+
+			unsigned short WordsCounter = 0;
+
+			char* SeparatorLastPosition = _End + 2, *SeparatorNextPosition = _End + 1;
+
+			do
+			{				
+				if (SeparatorLastPosition - SeparatorNextPosition > SeparatorLength)
+				{
+					WordsCounter++;
+				}
+
+				SeparatorLastPosition = SeparatorNextPosition;
+
+				SeparatorNextPosition = NewRange(_Begin, SeparatorLastPosition - 1).SearchNecklace(Separator, Right);
+						
+
+			} while (SeparatorNextPosition != nullptr);
+
+
+			return (SeparatorLastPosition > _Begin) ? WordsCounter + 1: WordsCounter;
 		}
+
+		
 
 
 	};
@@ -586,6 +611,23 @@ private:
 	char* _GetNewPhysicalEnd(char* Start, unsigned short Capacity) const
 	{
 		return Start + Capacity - 1;
+	}
+
+	void _Allocate(unsigned short LogicalLength)
+	{
+		unsigned short Capacity = _GetNewCapacity(LogicalLength);
+
+		_LogicalRange.Begin = new char[Capacity];
+
+		_PhysicalEnd = _GetNewPhysicalEnd(_LogicalRange.Begin, Capacity);
+
+		Clear();
+
+	}
+
+	StringKernel(unsigned short LogicalLength)
+	{
+		_Allocate(LogicalLength);
 	}
 
 	void _Reallocate(unsigned short NewLogicalLength, bool DoSaveData)
@@ -618,6 +660,11 @@ private:
 		{
 			_LogicalRange.Clear();
 		}
+	}
+
+	void _Deallocate()
+	{
+		delete[] _LogicalRange.Begin;
 	}
 
 	void _Assignment(const _clsRange& SourceRange)
@@ -808,6 +855,45 @@ private:
 		_LogicalRange.Replace(_LogicalRange.RawRange().SubRange(StartWriteIndex, StopWriteIndex), SourceRange);
 	}
 
+	StringKernel _SubString(const _clsRange& Range)
+	{
+		StringKernel Word(Range.Length());
+
+		Word._LogicalRange.Assignment(Range);
+
+		return Word;
+	}
+
+	vector <StringKernel> _Split(const _clsRange& Separitor) const
+	{
+		vector <StringKernel> vWords;
+
+
+
+
+
+		return vWords;
+	}
+
+	void _Split(vector <StringKernel>& vPhrase, const _clsRange& Separitor) const
+	{
+		vPhrase.clear();
+
+		unsigned short SeparatorLength = Separitor.Length();
+
+		char* SeparatorPosition = _LogicalRange.Begin - SeparatorLength;
+
+		while (SeparatorPosition != nullptr)
+		{
+			SeparatorPosition = _clsRange::NewRange(SeparatorPosition + SeparatorLength, _LogicalRange.End).
+				SearchNecklace(Separitor, _clsRange::Left);
+
+
+
+		}
+
+	}
+
 protected:
 
 	char* _GetBegin() const
@@ -845,11 +931,7 @@ public:
 	StringKernel()
 	{
 
-		_LogicalRange.Begin = new char[16];
-
-		_LogicalRange.Clear();
-
-		_PhysicalEnd = _GetNewPhysicalEnd(_LogicalRange.Begin, 16);
+		_Allocate(1);
 
 	}
 
@@ -858,23 +940,16 @@ public:
 
 		_clsRange ValueRange(Value);
 
-		const unsigned short Capacity = _GetNewCapacity(ValueRange.Length());
-
-		_LogicalRange.Begin = new char[Capacity];
+		_Allocate(ValueRange.Length());
 
 		_LogicalRange.Assignment(ValueRange);
-
-		_PhysicalEnd = _GetNewPhysicalEnd(_LogicalRange.Begin, Capacity);
 
 	}
 
 	StringKernel(const StringKernel& Value)
 	{
-		const unsigned short Capacity = _GetNewCapacity(Value._LogicalRange.Length());
-
-		_LogicalRange.Begin = new char[Capacity];
-
-		_PhysicalEnd = _GetNewPhysicalEnd(_LogicalRange.Begin, Capacity);
+		
+		_Allocate(Value._LogicalRange.Length());
 
 		_LogicalRange.Assignment(Value._LogicalRange);
 
@@ -882,7 +957,7 @@ public:
 
 	~StringKernel()
 	{
-		delete[] _LogicalRange.Begin;
+		_Deallocate();
 
 		cout << "Hi Destructor !" << endl;
 	}
@@ -1484,6 +1559,74 @@ public:
 	{
 		_Replace(StartWritingIndex, StopWritingIndex, Source._LogicalRange.RawRange());
 	}
+
+	StringKernel SubString(unsigned short From, unsigned short To)
+	{
+		return _SubString(_LogicalRange.SubRange(From, To));		// SubRange can handle From and To if they're outside LogicalRange
+	}
+
+	static bool IsUpper(char Character)
+	{
+		return _clsRange::IsUpper(Character);
+	}
+
+	static bool IsLower(char Character)
+	{
+		return _clsRange::IsLower(Character);
+	}
+
+	static bool IsVowel(char Character)
+	{
+		return _clsRange::IsVowel(Character);
+	}
+
+	static bool IsDigit(char Character)
+	{
+		return _clsRange::IsDigit(Character);
+	}
+
+	static char ToUpper(char Letter)
+	{
+
+		return _clsRange::ToUpper(Letter);
+	}
+
+	static char ToLower(char Letter)
+	{
+		return _clsRange::ToLower(Letter);
+	}
+
+	unsigned short CountAllUpperCase() const
+	{
+		return _LogicalRange.RawRange().CountAllUpperCase();
+	}
+
+	unsigned short CountAllLowerCase() const
+	{
+		return _LogicalRange.RawRange().CountAllLowerCase();
+	}
+
+	unsigned short CountAllVowels() const
+	{
+		return _LogicalRange.RawRange().CountAllVowels();
+	}
+
+	unsigned short CountAllLetters(char Letter, bool MatchCase)
+	{
+		return _LogicalRange.RawRange().CountAllLetters(Letter, MatchCase);
+	}
+
+	unsigned short CountAllWords(const char Separator[]) const
+	{
+		return _LogicalRange.RawRange().CountAllWords(_clsRange::NewRange(Separator).RawRange());
+	}
+
+	unsigned short CountAllWords(const StringKernel& Separator) const
+	{
+		return _LogicalRange.RawRange().CountAllWords(Separator._LogicalRange.RawRange());
+	}
+
+
 
 	void Print() const
 	{

@@ -1,15 +1,18 @@
 #include <iostream>
 
+#include "StringKernel.h"
 
 using namespace std;
 
 
 int main()
 {
+	StringKernel Abdou;
 
-	int A = 0x61;
+	Abdou.Assignment("Abdelatif SALEM CHERIF");
 
-	cout << (A & ~0x20);
-	
+	cout << Abdou.CountAllWords(" ") << endl;
+
+
 	return 0;
 }

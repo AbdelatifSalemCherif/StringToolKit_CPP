@@ -7,11 +7,11 @@ using namespace std;
 
 int main()
 {
-	StringKernel Abdou;
+	string Kamel = "Abdelatif SALEM CHERIF";
 
-	Abdou.Assignment("Abdelatif SALEM CHERIF");
+	StringKernel Abdou(Kamel.data());
 
-	cout << Abdou.CountAllWords(" ") << endl;
+	cout << "Abdou Words : " << Abdou.Data() << endl;
 
 
 	return 0;

@@ -354,6 +354,23 @@ private:
 			return nullptr;
 		}
 
+		_clsRange SearchFakeNecklace(const _clsRange& Necklace) const
+		{
+			char* StartSearchPosition = _Begin, char* NecklacePosition;
+
+			do 
+			{
+				NecklacePosition = SearchNecklace()
+
+
+
+
+
+			} while (NecklacePosition != nullptr && (StartSearchPosition - NecklacePosition) == 0);
+
+
+		}
+
 		char* SearchGem(const _clsRange& Gems, enStartFrom StartSearchFrom) const
 		{
 
@@ -630,6 +647,14 @@ private:
 		_Allocate(LogicalLength);
 	}
 
+	StringKernel(const _clsRange& Range)
+	{
+		_Allocate(Range.Length());
+
+		_LogicalRange.Assignment(Range);
+
+	}
+
 	void _Reallocate(unsigned short NewLogicalLength, bool DoSaveData)
 	{
 
@@ -868,7 +893,47 @@ private:
 	{
 		vector <StringKernel> vWords;
 
+		if (IsEmpty())
+		{
+			return vWords;
+		}
 
+		unsigned short SeparatorLength = Separitor.Length();
+
+		if (Length() - 1 < SeparatorLength)
+		{
+			vWords.push_back(StringKernel::StringKernel(*this));
+			return vWords;
+		}
+		else if (Length() - 1 == SeparatorLength)
+		{
+			if (!_LogicalRange.IsSameData(Separitor))
+			{
+				vWords.push_back(StringKernel::StringKernel(*this));
+			}
+
+			return vWords;
+		}
+
+		char* SeparatorLastPosition = _LogicalRange.Begin - SeparatorLength,
+			* SeparatorNextPosition = _LogicalRange.Begin - SeparatorLength;
+
+		do
+		{
+			if (SeparatorNextPosition - SeparatorLastPosition > SeparatorLength)
+			{
+				
+			}
+
+			SeparatorLastPosition = SeparatorNextPosition;
+
+			SeparatorNextPosition = _clsRange::NewRange(SeparatorLastPosition + 1, ).SearchNecklace(Separitor, _clsRange::Left);
+
+
+		} while (SeparatorNextPosition != nullptr);
+
+
+		return (SeparatorLastPosition > _Begin) ? WordsCounter + 1 : WordsCounter;
 
 
 
@@ -962,7 +1027,7 @@ public:
 		cout << "Hi Destructor !" << endl;
 	}
 
-	const char* GetValue() const
+	const char* Data() const
 	{
 		return _LogicalRange.Begin;
 	}

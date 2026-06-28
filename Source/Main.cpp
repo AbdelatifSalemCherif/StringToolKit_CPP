@@ -4,14 +4,15 @@
 
 using namespace std;
 
-
 int main()
 {
-	string Kamel = "Abdelatif SALEM CHERIF";
+	
+	StringKernel Abdou("Abdelatif SALEM CHERIF");
 
-	StringKernel Abdou(Kamel.data());
 
-	cout << "Abdou Words : " << Abdou.Data() << endl;
+	cout << Abdou.SearchFakeNecklace("Abdelatif ").Data() << endl;
+
+
 
 
 	return 0;

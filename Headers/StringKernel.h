@@ -356,17 +356,31 @@ private:
 
 		_clsRange SearchFakeNecklace(const _clsRange& Necklace) const
 		{
-			char* StartSearchPosition = _Begin, char* NecklacePosition;
+			unsigned short NecklaceLength = Necklace.Length();
 
-			do 
+			char* StartSearchPosition = _Begin - NecklaceLength, * NecklacePosition = _Begin - NecklaceLength;
+
+			while (NecklacePosition != nullptr && StartSearchPosition == NecklacePosition)
 			{
-				NecklacePosition = SearchNecklace()
 
+				StartSearchPosition = NecklacePosition + NecklaceLength;
+			
+				if (StartSearchPosition <= _End)
+				{
+					NecklacePosition = NewRange(StartSearchPosition, _End).SearchNecklace(Necklace, Left);
+				}
+		
+			}
 
-
-
-
-			} while (NecklacePosition != nullptr && (StartSearchPosition - NecklacePosition) == 0);
+			if (StartSearchPosition == _End + 1)
+			{
+				return NewRange(nullptr, nullptr);
+			}
+			else
+			{
+				return (NecklacePosition == nullptr) ? NewRange(StartSearchPosition, _End)
+					: NewRange(StartSearchPosition, NecklacePosition - 1);
+			}
 
 
 		}
@@ -889,7 +903,7 @@ private:
 		return Word;
 	}
 
-	vector <StringKernel> _Split(const _clsRange& Separitor) const
+	/*vector <StringKernel> _Split(const _clsRange& Separitor) const
 	{
 		vector <StringKernel> vWords;
 
@@ -938,7 +952,7 @@ private:
 
 
 		return vWords;
-	}
+	}*/
 
 	void _Split(vector <StringKernel>& vPhrase, const _clsRange& Separitor) const
 	{
